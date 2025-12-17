@@ -1,0 +1,28 @@
+@media (max-width: 768px) {
+    .navbar {
+        padding: 1rem;
+    }
+
+    .nav-links span {
+        display: none;
+    }
+
+    .hero h1 {
+        font-size: 2.5rem;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .wizard-container {
+        border-radius: 0;
+        margin: -2rem;
+        /* Full width mobile */
+        min-height: 100vh;
+    }
+
+    .wizard-header {
+        padding: 1.5rem;
+    }
+}

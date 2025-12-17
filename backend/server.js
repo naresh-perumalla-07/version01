@@ -1,0 +1,72 @@
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const path = require('path');
+const connectDB = require('./config/database');
+const errorHandler = require('./middleware/errorHandler');
+
+// Import routes
+const authRoutes = require('./routes/auth');
+const emergencyRoutes = require('./routes/emergency');
+const donationRoutes = require('./routes/donation');
+
+const app = express();
+
+// Connect to MongoDB
+connectDB();
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Serve static files from frontend public dir (html)
+app.use(express.static(path.join(__dirname, '../frontend/public')));
+// Serve CSS and JS specifically
+app.use('/css', express.static(path.join(__dirname, '../frontend/css')));
+app.use('/js', express.static(path.join(__dirname, '../frontend/js')));
+
+// API Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/emergencies', emergencyRoutes);
+app.use('/api/donations', donationRoutes);
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({
+    success: true,
+    message: '🩸 Blood Bridge Server is running!',
+    timestamp: new Date(),
+  });
+});
+
+// Serve frontend (SPA fallback)
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/public/index.html'));
+});
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: 'Route not found',
+  });
+});
+
+// Global error handler
+app.use(errorHandler);
+
+// Start server
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`
+    🩸 ============================================
+    🩸 Blood Bridge Server Running!
+    🩸 ============================================
+    📍 Environment: ${process.env.NODE_ENV}
+    🔌 Port: ${PORT}
+    📊 Database: MongoDB Atlas
+    🌐 URL: http://localhost:${PORT}
+    🩸 ============================================
+  `);
+});

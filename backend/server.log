@@ -1,0 +1,12 @@
+
+    🩸 ============================================
+    🩸 Blood Bridge Server Running!
+    🩸 ============================================
+    📍 Environment: development
+    🔌 Port: 5000
+    📊 Database: MongoDB Atlas
+    🌐 URL: http://localhost:5000
+    🩸 ============================================
+  
+❌ MongoDB Error: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017
+⚠️  RUNNING WITHOUT DATABASE CONNECTION - SOME FEATURES WILL FAIL
