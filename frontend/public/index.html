@@ -32,10 +32,14 @@
                 style="font-weight: 800; font-size: 1.25rem; margin-left: 12px; letter-spacing: -0.02em;">BloodBridge</span>
         </div>
 
-        <div class="nav-links">
-            <button onclick="showPage('home')" class="nav-item active">Home</button>
-            <button onclick="showPage('emergency')" class="nav-item">Find Blood</button>
-            <button onclick="showPage('hospital-dashboard')" class="nav-item">Institutions</button>
+        <div class="mobile-toggle" onclick="toggleMobileMenu()">
+            ☰
+        </div>
+
+        <div class="nav-links" id="nav-links-container">
+            <button onclick="showPage('home')" class="nav-item active" id="nav-home">Home</button>
+            <button onclick="showPage('emergency')" class="nav-item" id="nav-emergency">Find Blood</button>
+            <button onclick="showPage('hospital-dashboard')" class="nav-item" id="nav-hospital-dashboard">Institutions</button>
         </div>
 
         <div class="nav-actions" style="display: flex; gap: 12px; align-items: center;">

@@ -1,10 +1,25 @@
+// Mobile Menu Toggle
+const toggleMobileMenu = () => {
+    const nav = document.getElementById('nav-links-container');
+    nav.classList.toggle('active');
+};
+
 // Show page
 const showPage = (name) => {
+  // 1. Handle Pages
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const target = document.getElementById(name);
   if (target) {
     target.classList.add('active');
     window.scrollTo(0, 0);
+
+    // 2. Handle Nav Links Active State
+    document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
+    const activeBtn = document.getElementById(`nav-${name}`);
+    if (activeBtn) activeBtn.classList.add('active');
+
+    // Close mobile menu if open
+    document.getElementById('nav-links-container').classList.remove('active');
 
     // Trigger smooth fade-up animation
     target.style.animation = 'none';
