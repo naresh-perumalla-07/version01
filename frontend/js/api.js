@@ -32,6 +32,18 @@ const authAPI = {
             throw new Error(error.message || 'Registration failed');
         }
         return response.json();
+    },
+    updateProfile: async (data) => {
+        const response = await fetch(`${API_URL}/auth/profile`, {
+            method: 'PUT',
+            headers: getHeaders(),
+            body: JSON.stringify(data)
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Update failed');
+        }
+        return response.json();
     }
 };
 
@@ -85,6 +97,13 @@ const donationAPI = {
             headers: getHeaders()
         });
         if (!response.ok) throw new Error('Failed to fetch hospital stats');
+        return response.json();
+    },
+    getMyHistory: async () => {
+        const response = await fetch(`${API_URL}/donations/history`, {
+             headers: getHeaders()
+        });
+        if (!response.ok) throw new Error('Failed to fetch donation history');
         return response.json();
     }
 };

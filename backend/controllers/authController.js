@@ -137,3 +137,55 @@ exports.getCurrentUser = async (req, res, next) => {
     next(error);
   }
 };
+
+// @route   PUT /api/auth/profile
+// @desc    Update user profile
+// @access  Private
+exports.updateProfile = async (req, res, next) => {
+  try {
+    const { name, city, phone, bloodGroup } = req.body;
+
+    if (isDbConnected()) {
+      const user = await User.findById(req.userId);
+      if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+      if (name) user.name = name;
+      if (city) user.city = city;
+      if (phone) user.phone = phone;
+      if (bloodGroup && user.role === 'donor') user.bloodGroup = bloodGroup;
+
+      await user.save();
+
+      return res.status(200).json({
+        success: true,
+        message: 'Profile updated successfully',
+        user: {
+          id: user._id, name: user.name, email: user.email, phone: user.phone,
+          city: user.city, role: user.role, bloodGroup: user.bloodGroup,
+          totalDonations: user.totalDonations,
+        }
+      });
+    } else {
+      // MOCK
+      const user = mockUsers.find(u => u._id === req.userId);
+      if (!user) return res.status(404).json({ success: false, message: 'User not found (Demo)' });
+
+      if (name) user.name = name;
+      if (city) user.city = city;
+      if (phone) user.phone = phone;
+      if (bloodGroup && user.role === 'donor') user.bloodGroup = bloodGroup;
+
+      return res.status(200).json({
+        success: true,
+        message: 'Profile updated successfully (Demo)',
+        user: {
+          id: user._id, name: user.name, email: user.email, phone: user.phone,
+          city: user.city, role: user.role, bloodGroup: user.bloodGroup,
+          totalDonations: user.totalDonations,
+        }
+      });
+    }
+  } catch (error) {
+    next(error);
+  }
+};

@@ -10,6 +10,11 @@ const showPage = (name) => {
     target.style.animation = 'none';
     target.offsetHeight; /* trigger reflow */
     target.style.animation = 'fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards';
+
+    // Lazy load data based on page
+    if (name === 'donor-dashboard') loadDonorDashboard();
+    if (name === 'hospital-dashboard') loadHospitalDashboard();
+    if (name === 'home') loadEmergencies();
   }
 };
 
@@ -150,7 +155,6 @@ const loadDonorDashboard = async () => {
 };
 
 
-// --- HOSPITAL DASHBOARD ---
 // --- HOSPITAL DASHBOARD ---
 const loadHospitalDashboard = async () => {
   try {

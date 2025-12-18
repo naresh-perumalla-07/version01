@@ -12,4 +12,7 @@ router.post('/login', authController.login);
 // @route   GET /api/auth/me
 router.get('/me', auth, authController.getCurrentUser);
 
+// @route   PUT /api/auth/profile
+router.put('/profile', auth, authController.updateProfile);
+
 module.exports = router;

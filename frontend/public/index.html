@@ -18,12 +18,15 @@
     <nav class="navbar">
         <div class="logo">
             <div
-                style="width: 40px; height: 40px; background: linear-gradient(135deg, var(--primary-main), var(--primary-depth)); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 4px 12px rgba(225, 29, 72, 0.3);">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path
-                        d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-                        fill="white" stroke="none" />
-                </svg>
+                style="width: 40px; height: 40px; position: relative; display: flex; align-items: center; justify-content: center;">
+                <div style="position: absolute; width: 100%; height: 100%; background: var(--primary-main); opacity: 0.2; border-radius: 50%; filter: blur(8px);"></div>
+                <div style="width: 36px; height: 36px; background: linear-gradient(135deg, var(--primary-main), #be123c); border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(225, 29, 72, 0.4); transform: rotate(45deg);">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" style="transform: rotate(-45deg);">
+                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                        <path d="M12 7v5" stroke-linecap="round"/>
+                        <path d="M9.5 9.5h5" stroke-linecap="round"/>
+                    </svg>
+                </div>
             </div>
             <span
                 style="font-weight: 800; font-size: 1.25rem; margin-left: 12px; letter-spacing: -0.02em;">BloodBridge</span>
@@ -436,9 +439,9 @@
 
     </main>
 
-    <script src="js/api.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/app.js"></script>
+    <script src="js/api.js?v=2.0"></script>
+    <script src="js/auth.js?v=2.0"></script>
+    <script src="js/app.js?v=2.0"></script>
 </body>
 
 </html>
