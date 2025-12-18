@@ -15,7 +15,7 @@ const auth = (req, res, next) => {
     const token = authHeader.split(' ')[1];
 
     // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'dev_secret_fallback_123');
     req.userId = decoded.id;
     req.userRole = decoded.role;
     next();

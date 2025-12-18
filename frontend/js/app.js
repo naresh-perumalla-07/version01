@@ -149,35 +149,158 @@ const loadDonorDashboard = async () => {
   }
 };
 
+
+// --- HOSPITAL DASHBOARD ---
 // --- HOSPITAL DASHBOARD ---
 const loadHospitalDashboard = async () => {
   try {
-    const activeReq = await emergencyAPI.getAll({ status: 'active' });
-    const donations = await donationAPI.getHospitalDonations();
+    const user = JSON.parse(localStorage.getItem('user'));
+    
+    // Default Tab
+    let activeTab = 'overview';
+    
+    // Render Sidebar Layout
+    const sidebar = document.querySelector('#hospital-dashboard .sidebar');
+    if(sidebar) {
+        sidebar.innerHTML = `
+            <div style="padding: 0 12px; margin-bottom: 12px; font-size: 0.75rem; color: var(--text-tertiary); font-weight: 700; text-transform: uppercase;">Hospital Menu</div>
+            <div class="sidebar-item active" onclick="switchHospitalTab('overview', this)">Overview</div>
+            <div class="sidebar-item" onclick="switchHospitalTab('requests', this)">Active Requests</div>
+            <div class="sidebar-item" onclick="switchHospitalTab('inventory', this)">Inventory</div>
+            <div class="sidebar-item" onclick="switchHospitalTab('analytics', this)">Analytics</div>
+        `;
+    }
 
-    const activeCount = activeReq.count || 2; // Mock if 0 to show UI
-    const fulfilledCount = donations.donations ? donations.donations.length : 12;
+    // Load Data
+    const [allActive, myRequests] = await Promise.all([
+        emergencyAPI.getAll({ status: 'active' }),
+        emergencyAPI.getAll({ createdBy: 'me' })
+    ]);
 
-    const container = document.getElementById('hospital-stats');
-    if (!container) return;
+    const activeCount = allActive.count || 0;
+    const myActiveCount = myRequests.emergencies.filter(e => e.status === 'active').length;
 
-    container.innerHTML = `
-      <div class="card">
-        <div class="text-secondary text-sm font-medium uppercase tracking-wider mb-2">Active Requests</div>
-        <div style="font-size: 3rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em;">${activeCount}</div>
-      </div>
-      <div class="card">
-         <div class="text-secondary text-sm font-medium uppercase tracking-wider mb-2">Fulfilled Today</div>
-         <div style="font-size: 3rem; font-weight: 700; color: var(--success-base); letter-spacing: -0.02em;">${fulfilledCount}</div>
-      </div>
-      <div class="card">
-         <div class="text-secondary text-sm font-medium uppercase tracking-wider mb-2">Units in Stock</div>
-         <div style="font-size: 3rem; font-weight: 700; color: var(--info-base); letter-spacing: -0.02em;">156</div>
-      </div>
+    // Render Views
+    const contentDiv = document.querySelector('#hospital-dashboard .content');
+    
+    // 1. Overview View
+    contentDiv.innerHTML = `
+        <div id="view-overview">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
+                <div>
+                    <h2>Hospital Overview</h2>
+                    <p>Real-time view of emergency responses.</p>
+                </div>
+                <button onclick="showPage('emergency')" class="btn btn-primary">Create New Request</button>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; margin-bottom: 48px;">
+                 <div class="card">
+                    <div class="text-secondary text-sm font-medium uppercase tracking-wider mb-2">Network Active</div>
+                    <div style="font-size: 3rem; font-weight: 700; color: var(--danger-base); letter-spacing: -0.02em;">${activeCount}</div>
+                  </div>
+                  <div class="card">
+                     <div class="text-secondary text-sm font-medium uppercase tracking-wider mb-2">My Broadcasts</div>
+                     <div style="font-size: 3rem; font-weight: 700; color: var(--primary-main); letter-spacing: -0.02em;">${myActiveCount}</div>
+                  </div>
+                  <div class="card">
+                     <div class="text-secondary text-sm font-medium uppercase tracking-wider mb-2">Total History</div>
+                     <div style="font-size: 3rem; font-weight: 700; color: var(--text-main); letter-spacing: -0.02em;">${myRequests.count || 0}</div>
+                  </div>
+            </div>
+        </div>
+
+        <div id="view-requests" class="hidden">
+             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
+                <h2>Manage Broadcasts</h2>
+                <button onclick="showPage('emergency')" class="btn btn-primary">New Broadcast</button>
+            </div>
+            <div id="my-broadcasts-list" style="display: grid; gap: 16px;">
+                ${myRequests.emergencies.length === 0 
+                    ? `<div class="card text-secondary" style="text-align: center; padding: 40px;">No broadcasts history found.</div>`
+                    : myRequests.emergencies.map(e => `
+                        <div class="card" style="display: flex; justify-content: space-between; align-items: center; border-left: 4px solid ${e.status === 'active' ? 'var(--success-text)' : 'var(--border-subtle)'}; opacity: ${e.status === 'active' ? '1' : '0.7'};">
+                            <div>
+                                <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 4px;">
+                                    <span class="badge" style="${e.status === 'active' ? 'background: var(--success-bg); color: var(--success-text);' : 'background: var(--bg-surface-hover); color: var(--text-muted);'}">${e.status.toUpperCase()}</span>
+                                    <h4 style="margin: 0;">${e.patientName} (${e.bloodGroup})</h4>
+                                </div>
+                                <div class="text-secondary text-sm">
+                                    ${new Date(e.createdAt).toLocaleDateString()} • Units: ${e.unitsNeeded} • Responses: ${e.respondents ? e.respondents.length : 0}
+                                </div>
+                            </div>
+                            <div>
+                                ${e.status === 'active' 
+                                    ? `<button onclick="markFulfilled('${e._id}')" class="btn btn-secondary btn-sm" style="border-color: var(--success-text); color: var(--success-text);">✅ Mark Completed</button>`
+                                    : `<span class="text-secondary text-sm">Archived</span>`
+                                }
+                            </div>
+                        </div>
+                    `).join('')
+                }
+            </div>
+        </div>
+
+        <div id="view-inventory" class="hidden">
+            <h2 style="margin-bottom: 24px;">Blood Inventory</h2>
+            <div class="card">
+                <table style="width: 100%; border-collapse: collapse; color: var(--text-body);">
+                    <thead>
+                        <tr style="border-bottom: 1px solid var(--border-subtle); text-align: left;">
+                            <th style="padding: 12px;">Group</th>
+                            <th style="padding: 12px;">Units Available</th>
+                            <th style="padding: 12px;">Status</th>
+                            <th style="padding: 12px;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td style="padding: 12px; font-weight: bold;">A+</td><td style="padding: 12px;">45</td><td style="padding: 12px; color: var(--success-text);">Good</td><td style="padding: 12px;"><button class="btn btn-secondary btn-sm" style="padding: 4px 12px;">Update</button></td></tr>
+                        <tr><td style="padding: 12px; font-weight: bold;">O+</td><td style="padding: 12px;">12</td><td style="padding: 12px; color: var(--danger-text);">Low</td><td style="padding: 12px;"><button class="btn btn-secondary btn-sm" style="padding: 4px 12px;">Update</button></td></tr>
+                        <tr><td style="padding: 12px; font-weight: bold;">B-</td><td style="padding: 12px;">8</td><td style="padding: 12px; color: var(--danger-text);">Critical</td><td style="padding: 12px;"><button class="btn btn-secondary btn-sm" style="padding: 4px 12px;">Update</button></td></tr>
+                        <tr><td style="padding: 12px; font-weight: bold;">AB+</td><td style="padding: 12px;">22</td><td style="padding: 12px; color: var(--text-muted);">Stable</td><td style="padding: 12px;"><button class="btn btn-secondary btn-sm" style="padding: 4px 12px;">Update</button></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div id="view-analytics" class="hidden">
+             <div class="card" style="text-align: center; padding: 40px;">
+                <h3>Analytics Module</h3>
+                <p>Detailed reports coming in v2.1</p>
+             </div>
+        </div>
     `;
+
   } catch (error) {
     console.error('Error loading hospital dashboard:', error);
   }
+};
+
+// Tab Switcher Logic
+window.switchHospitalTab = (tabName, el) => {
+    // Update Sidebar UI
+    document.querySelectorAll('#hospital-dashboard .sidebar-item').forEach(i => i.classList.remove('active'));
+    el.classList.add('active');
+
+    // Hide all views
+    document.getElementById('view-overview').classList.add('hidden');
+    document.getElementById('view-requests').classList.add('hidden');
+    document.getElementById('view-inventory').classList.add('hidden');
+    document.getElementById('view-analytics').classList.add('hidden');
+
+    // Show selected view
+    document.getElementById(`view-${tabName}`).classList.remove('hidden');
+};
+
+const markFulfilled = async (id) => {
+    if(!confirm('Are you sure the need is met? This will stop the broadcast.')) return;
+    try {
+        await emergencyAPI.updateStatus(id, 'fulfilled');
+        showNotification('Broadcast marked as fulfilled!', 'success');
+        loadHospitalDashboard(); // Reload
+    } catch (error) {
+        showNotification(error.message, 'error');
+    }
 };
 
 // Action: Respond
@@ -261,6 +384,8 @@ const submitEmergency = async () => {
       condition,
       urgency,
       hospitalName: hospitalName || 'General Hospital',
+      landmark: getValue('emg-landmark') || 'Main Entrance',
+      contactPerson: getValue('emg-contact-name') || 'Hospital Staff',
       contactPhone: contactPhone || 'N/A',
       latitude: 28.6139,
       longitude: 77.2090

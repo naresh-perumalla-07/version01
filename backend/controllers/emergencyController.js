@@ -74,11 +74,12 @@ exports.createEmergency = async (req, res, next) => {
 // @access  Public
 exports.getEmergencies = async (req, res, next) => {
   try {
-    const { bloodGroup, latitude, longitude, status } = req.query;
+    const { bloodGroup, latitude, longitude, status, createdBy } = req.query;
 
     if (isDbConnected()) {
       let filter = { status: status || 'active' };
       if (bloodGroup) filter.bloodGroup = bloodGroup;
+      if (createdBy === 'me') filter.createdBy = req.userId;
 
       const emergencies = await Emergency.find(filter)
         .populate('createdBy', 'name city phone')
@@ -149,6 +150,55 @@ exports.respondToEmergency = async (req, res, next) => {
       return res.status(200).json({
         success: true, message: 'Response recorded successfully (Demo Mode)',
         respondents: emergency.respondents.length,
+      });
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+// @route   PUT /api/emergencies/:id/status
+// @desc    Update emergency status (Hospital only)
+// @access  Private
+exports.updateEmergencyStatus = async (req, res, next) => {
+  try {
+    const { status } = req.body;
+    const { id } = req.params;
+
+    if (!['active', 'fulfilled', 'expired'].includes(status)) {
+      return res.status(400).json({ success: false, message: 'Invalid status' });
+    }
+
+    if (isDbConnected()) {
+      let emergency = await Emergency.findById(id);
+      if (!emergency) return res.status(404).json({ success: false, message: 'Emergency not found' });
+
+      // Ensure ownership
+      if (emergency.createdBy.toString() !== req.userId) {
+        return res.status(403).json({ success: false, message: 'Not authorized to update this emergency' });
+      }
+
+      emergency.status = status;
+      await emergency.save();
+
+      return res.status(200).json({
+        success: true,
+        message: `Emergency marked as ${status}`,
+        emergency,
+      });
+    } else {
+      // MOCK FALLBACK
+      const emergency = mockEmergencies.find(e => e._id === id);
+      if (!emergency) return res.status(404).json({ success: false, message: 'Emergency not found (Demo Mode)' });
+
+      if (emergency.createdBy !== req.userId) {
+        return res.status(403).json({ success: false, message: 'Not authorized (Demo Mode)' });
+      }
+
+      emergency.status = status;
+      return res.status(200).json({
+        success: true,
+        message: `Emergency marked as ${status} (Demo Mode)`,
+        emergency,
       });
     }
   } catch (error) {

@@ -123,6 +123,7 @@ p {
 .text-gradient {
     background: linear-gradient(to right, var(--primary-glow), #ffffff);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     text-shadow: 0 0 30px rgba(225, 29, 72, 0.2);
 }
@@ -409,4 +410,76 @@ p {
     h1 {
         font-size: 2.75rem;
     }
+}
+
+/* --- DROPDOWN MENU --- */
+.dropdown-container {
+    position: relative;
+    cursor: pointer;
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: 120%;
+    right: 0;
+    width: 200px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-highlight);
+    border-radius: 12px;
+    padding: 8px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    z-index: 2000;
+}
+
+.dropdown-menu.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    color: var(--text-body);
+    font-size: 0.9rem;
+    font-weight: 500;
+    border-radius: 8px;
+    transition: all 0.15s;
+    cursor: pointer;
+}
+
+.dropdown-item:hover {
+    background: var(--bg-surface-hover);
+    color: white;
+}
+
+.dropdown-item.danger {
+    color: var(--danger-text);
+}
+
+.dropdown-item.danger:hover {
+    background: var(--danger-bg);
+}
+
+/* User Profile Trigger */
+.user-trigger {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 16px;
+    background: var(--bg-surface-hover);
+    border: 1px solid var(--border-subtle);
+    border-radius: 99px;
+    transition: all 0.2s;
+}
+
+.user-trigger:hover {
+    border-color: var(--border-highlight);
+    background: var(--bg-surface);
 }

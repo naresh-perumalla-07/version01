@@ -67,6 +67,15 @@ const emergencyAPI = {
             throw new Error(error.message || 'Failed to respond');
         }
         return response.json();
+    },
+    updateStatus: async (id, status) => {
+        const response = await fetch(`${API_URL}/emergencies/${id}/status`, {
+            method: 'PUT',
+            headers: getHeaders(),
+            body: JSON.stringify({ status })
+        });
+        if (!response.ok) throw new Error('Failed to update status');
+        return response.json();
     }
 };
 

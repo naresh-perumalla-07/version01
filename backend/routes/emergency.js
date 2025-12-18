@@ -12,4 +12,7 @@ router.get('/', emergencyController.getEmergencies);
 // @route   POST /api/emergencies/respond
 router.post('/respond', auth, emergencyController.respondToEmergency);
 
+// @route   PUT /api/emergencies/:id/status
+router.put('/:id/status', auth, emergencyController.updateEmergencyStatus);
+
 module.exports = router;
