@@ -2,7 +2,10 @@ const mongoose = require('mongoose');
 
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI, {
+    const dbURI = process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb://localhost:27017/blood-bridge';
+    console.log(`🔌 Attempting to connect to: ${dbURI.split('@')[1] || 'Localhost'}`); // Mask creds
+    
+    const conn = await mongoose.connect(dbURI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
       serverSelectionTimeoutMS: 5000 // Timeout after 5s instead of 30s

@@ -42,12 +42,19 @@ const Register = () => {
         }
 
         // Transform for backend
+        const sanitizeNumber = (val) => (val === '' || val === null) ? undefined : Number(val);
+
         const payload = {
             ...formData,
+            age: sanitizeNumber(formData.age),
+            height: sanitizeNumber(formData.height),
+            weight: sanitizeNumber(formData.weight),
+            unitsNeeded: sanitizeNumber(formData.unitsNeeded),
             address: {
                 street: formData.addressStreet,
                 state: formData.addressState,
-                zip: formData.addressZip
+                pincode: formData.addressZip, // Requirement: Pincode
+                zip: formData.addressZip // Legacy fallback
             }
         };
 
@@ -55,7 +62,9 @@ const Register = () => {
         if (res.success) {
             navigate('/');
         } else {
+            console.error("Register Failed UI:", res.message);
             setError(res.message);
+            alert("Registration Failed: " + res.message); // Force user visibility
         }
     };
 
@@ -158,8 +167,31 @@ const Register = () => {
                             <input name="addressState" className="input" value={formData.addressState} onChange={handleChange} />
                         </div>
                         <div className="form-group">
-                            <label className="label">Zip Code</label>
-                            <input name="addressZip" className="input" value={formData.addressZip} onChange={handleChange} />
+                            <label className="label">Pincode</label>
+                            <input name="addressZip" className="input" value={formData.addressZip} onChange={handleChange} placeholder="500001" />
+                        </div>
+                    </div>
+
+                    <div className="form-group" style={{ marginTop: '16px' }}>
+                        <label className="label">Live Location (For Maps)</label>
+                        <div style={{ display: 'flex', gap: '12px' }}>
+                             <button type="button" onClick={() => {
+                                 if (navigator.geolocation) {
+                                     navigator.geolocation.getCurrentPosition((pos) => {
+                                         setFormData({ 
+                                             ...formData, 
+                                             latitude: pos.coords.latitude, 
+                                             longitude: pos.coords.longitude 
+                                         });
+                                         alert("Location Detected! 📍");
+                                     }, () => alert("Location access denied."));
+                                 }
+                             }} className="btn btn-secondary" style={{ flex: 1, fontSize: '0.9rem' }}>
+                                 📍 Detect My Location
+                             </button>
+                             <div className="input" style={{ flex: 2, color: formData.latitude ? '#34D399' : '#94A3B8' }}>
+                                 {formData.latitude ? `Lat: ${formData.latitude.toFixed(4)}, Lng: ${formData.longitude.toFixed(4)}` : 'Location not set'}
+                             </div>
                         </div>
                     </div>
 

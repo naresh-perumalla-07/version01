@@ -15,7 +15,9 @@ const Login = () => {
         if (res.success) {
             navigate('/');
         } else {
+            console.error("Login Failed UI:", res.message);
             setError(res.message);
+            alert("Login Failed: " + res.message); // Force user visibility
         }
     };
 

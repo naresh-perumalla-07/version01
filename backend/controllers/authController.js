@@ -18,7 +18,7 @@ const isDbConnected = () => require('mongoose').connection.readyState === 1;
 // @access  Public
 exports.register = async (req, res, next) => {
   try {
-    const { name, email, password, phone, city, role, bloodGroup, age, gender, height, weight, address, unitsNeeded } = req.body;
+    const { name, email, password, phone, city, role, bloodGroup, age, gender, height, weight, address, unitsNeeded, latitude, longitude } = req.body;
 
     if (isDbConnected()) {
       // Check if user already exists
@@ -31,6 +31,7 @@ exports.register = async (req, res, next) => {
       user = new User({
         name, email, password, phone, city, role,
         age, gender, height, weight, address, unitsNeeded,
+        latitude, longitude, // Save Location
         bloodGroup: (role === 'donor' || role === 'person') ? bloodGroup : null,
       });
 
@@ -63,6 +64,11 @@ exports.register = async (req, res, next) => {
       });
     }
   } catch (error) {
+    console.error("❌ Registration Error:", error);
+    if (error.name === 'ValidationError') {
+        const messages = Object.values(error.errors).map(val => val.message);
+        return res.status(400).json({ success: false, message: messages.join('. ') });
+    }
     next(error);
   }
 };

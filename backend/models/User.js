@@ -35,11 +35,12 @@ const UserSchema = new mongoose.Schema(
     height: { type: Number }, // in cm
     weight: { type: Number }, // in kg
     unitsNeeded: { type: Number, default: 0 },
-    bloodGroup: { type: String, enum: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] },
+    // bloodGroup defined below with validation
     address: {
         street: String,
         state: String,
-        zip: String
+        pincode: String, // Requirement: Pincode
+        zip: String // Legacy support
     },
     healthIssues: {
         type: String,
