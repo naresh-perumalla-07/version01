@@ -6,7 +6,7 @@ const toggleMobileMenu = () => {
 };
 
 // Show page
-const showPage = (name) => {
+window.showPage = (name) => {
   // 1. Handle Pages
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const target = document.getElementById(name);
@@ -20,7 +20,8 @@ const showPage = (name) => {
     if (activeBtn) activeBtn.classList.add('active');
 
     // Close mobile menu if open
-    document.getElementById('nav-links-container').classList.remove('active');
+    const mobileNav = document.getElementById('nav-links-container');
+    if(mobileNav) mobileNav.classList.remove('active');
 
     // Trigger smooth fade-up animation
     target.style.animation = 'none';
@@ -1150,6 +1151,49 @@ style.innerHTML = `
 document.head.appendChild(style);
 
 
+
+// --- NAVBAR LOGIC ---
+const updateNavbar = () => {
+    const user = JSON.parse(localStorage.getItem('user'));
+    
+    // 1. Center Links (Home, Find Blood, Institutions)
+    const navContainer = document.getElementById('nav-links-container');
+    if (navContainer) {
+        navContainer.innerHTML = `
+            <button onclick="showPage('home')" class="nav-item" id="nav-home">Home</button>
+            <button onclick="showPage('emergency')" class="nav-item" id="nav-emergency">Find Blood</button>
+            <button onclick="showPage('hospital-dashboard')" class="nav-item" id="nav-hospital-dashboard">Institutions</button>
+        `;
+    }
+
+    // 2. Right Actions (Login/Join vs Dashboard/Logout)
+    const authContainer = document.getElementById('auth-buttons');
+    if (authContainer) {
+        if (user) {
+            // Logged In
+            const dashboardPage = user.role === 'hospital' ? 'hospital-dashboard' : 'donor-dashboard';
+            authContainer.innerHTML = `
+                 <button onclick="showPage('${dashboardPage}')" class="btn btn-secondary" style="padding: 10px 20px;">Dashboard</button>
+                 <button onclick="logout()" class="btn btn-primary" style="padding: 10px 20px;">Logout</button>
+            `;
+        } else {
+            // Guest
+            authContainer.innerHTML = `
+                <button onclick="showPage('login')" class="btn btn-secondary" style="padding: 10px 20px;">Log In</button>
+                <button onclick="showPage('register')" class="btn btn-primary" style="padding: 10px 24px;">Join Now</button>
+            `;
+        }
+    }
+};
+
+window.logout = () => {
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    showNotification('Logged out successfully', 'success');
+    updateNavbar();
+    showPage('home');
+};
+
 // --- CHATBOT WIDGET ---
 const initChatbot = () => {
     // 1. Inject Styles
@@ -1162,8 +1206,8 @@ const initChatbot = () => {
             position: fixed;
             bottom: 32px;
             right: 32px;
-            width: 64px;
-            height: 64px;
+            width: 60px;
+            height: 60px;
             background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
             border-radius: 50%;
             box-shadow: 0 10px 25px rgba(225, 29, 72, 0.4);
@@ -1180,14 +1224,14 @@ const initChatbot = () => {
         }
         #bb-chatbot-window {
             position: fixed;
-            bottom: 110px;
+            bottom: 100px;
             right: 32px;
-            width: 350px;
-            height: 500px;
+            width: 320px;
+            height: 450px;
             background: rgba(15, 23, 42, 0.95);
-            backdrop-filter: blur(12px);
+            backdrop-filter: blur(16px);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 24px;
+            border-radius: 20px;
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
             display: flex;
             flex-direction: column;
@@ -1204,7 +1248,7 @@ const initChatbot = () => {
             transform: translateY(0) scale(1);
         }
         .chat-header {
-            padding: 20px;
+            padding: 16px;
             background: linear-gradient(to right, rgba(225, 29, 72, 0.1), transparent);
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
             display: flex;
@@ -1213,49 +1257,54 @@ const initChatbot = () => {
         }
         .chat-messages {
             flex: 1;
-            padding: 20px;
+            padding: 16px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
             gap: 12px;
         }
         .chat-msg {
-            max-width: 80%;
-            padding: 12px 16px;
+            max-width: 85%;
+            padding: 10px 14px;
             border-radius: 12px;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             line-height: 1.5;
             animation: slide-up 0.3s ease-out;
         }
         .chat-msg.bot {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.05);
             align-self: flex-start;
             border-bottom-left-radius: 4px;
+            color: #e2e8f0;
         }
         .chat-msg.user {
             background: #e11d48;
             color: white;
             align-self: flex-end;
             border-bottom-right-radius: 4px;
+            box-shadow: 0 4px 12px rgba(225, 29, 72, 0.3);
         }
         .chat-options {
             display: flex;
             flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 8px;
+            gap: 6px;
+            margin-top: 4px;
         }
         .chat-option-btn {
             background: transparent;
-            border: 1px solid rgba(225, 29, 72, 0.5);
-            color: #e11d48;
+            border: 1px solid rgba(225, 29, 72, 0.4);
+            color: #fda4af;
             padding: 6px 12px;
             border-radius: 20px;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             cursor: pointer;
             transition: all 0.2s;
         }
         .chat-option-btn:hover {
             background: rgba(225, 29, 72, 0.1);
+            color: white;
+            border-color: #e11d48;
         }
         @keyframes float-y { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
         @keyframes slide-up { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -1265,24 +1314,24 @@ const initChatbot = () => {
     // 2. Inject DOM
     const fab = document.createElement('div');
     fab.id = 'bb-chatbot-fab';
-    fab.innerHTML = `<span style="font-size: 2rem;">🤖</span>`; 
+    fab.innerHTML = `<span style="font-size: 1.8rem;">💬</span>`; 
     
     const win = document.createElement('div');
     win.id = 'bb-chatbot-window';
     win.innerHTML = `
         <div class="chat-header">
-            <div style="width: 10px; height: 10px; background: #34D399; border-radius: 50%; box-shadow: 0 0 5px #34D399;"></div>
+            <div style="width: 8px; height: 8px; background: #34D399; border-radius: 50%; box-shadow: 0 0 5px #34D399;"></div>
             <div>
-                <div style="font-weight: 700; font-size: 0.95rem;">Bridge Assistant</div>
-                <div style="font-size: 0.75rem; color: var(--text-secondary);">Always online</div>
+                <div style="font-weight: 700; font-size: 0.9rem;">Bridge AI</div>
+                <div style="font-size: 0.7rem; color: var(--text-secondary);">Online</div>
             </div>
             <button onclick="toggleChat()" style="margin-left: auto; background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 1.2rem;">&times;</button>
         </div>
         <div class="chat-messages" id="chat-messages">
             <!-- Dynamic Content -->
         </div>
-        <div style="padding: 12px; border-top: 1px solid rgba(255,255,255,0.05); font-size: 0.7rem; color: var(--text-secondary); text-align: center;">
-            AI-powered triage support
+        <div style="padding: 8px; border-top: 1px solid rgba(255,255,255,0.05); font-size: 0.65rem; color: var(--text-secondary); text-align: center;">
+            Blood Bridge Smart Assistant
         </div>
     `;
 
@@ -1292,14 +1341,14 @@ const initChatbot = () => {
     // 3. Interaction Logic
     fab.onclick = toggleChat;
 
-    // Initial Greeting
+    // Initial Greeting - Wait slightly longer to avoid 'box' flash if that was it
     setTimeout(() => {
-        addBotMessage("Hi! I'm your Blood Bridge assistant. How can I help you today?", [
-            { text: "I need blood ASAP", action: "need_blood" },
-            { text: "I want to donate", action: "donate" },
+        addBotMessage("👋 Hi! I can help you find blood, donate, or check eligibility.", [
+            { text: "Find Blood", action: "need_blood" },
+            { text: "Donate", action: "donate" },
             { text: "Am I eligible?", action: "check_eligibility" }
         ]);
-    }, 1000);
+    }, 1500);
 }
 
 window.toggleChat = () => {
@@ -1397,31 +1446,96 @@ const handleChatAction = (action, text) => {
                 break;
             case 'reset':
                 addBotMessage("How else can I assist?", [
-                    { text: "I need blood", action: "need_blood" },
+                    { text: "Find Blood", action: "need_blood" },
                     { text: "Donate", action: "donate" }
                  ]);
                  break;
         }
-    }, 600);
+    }, 500);
 }
 
 
 // Initializer
+// Initializer
 document.addEventListener('DOMContentLoaded', () => {
-  initChatbot(); // Launch Chatbot
-  
-  updateNavbar();
+    console.log("🚀 App Initializing...");
 
-  // Check auth status
-  const user = JSON.parse(localStorage.getItem('user'));
-  if (user) {
-    if (user.role === 'donor') loadDonorDashboard();
-    if (user.role === 'hospital') loadHospitalDashboard();
-  }
+    // 0. Vital Logic: Navbar (PRIORITY 1)
+    try {
+        updateNavbar();
+    } catch(e) {
+        console.error("Navbar Init Failed:", e);
+        // Fallback to basic nav if crash
+        const navContainer = document.getElementById('nav-links-container');
+        if(navContainer) navContainer.innerHTML = `<button onclick="window.showPage('home')" class="nav-item">Home</button>`;
+    }
 
-  // Public list always loads
-  loadEmergencies();
-  
-  // Load Home Stats (Particles & Numbers)
-  loadHomeStats();
+    // 1. Initialize Visuals
+    // initParticles(); // Already in loadHomeStats but safe to call if needed
+    
+    // 2. Initialize Chatbot (PRIORITY 2)
+    try {
+        initChatbot();
+    } catch(e) { console.warn("Chatbot failed to load:", e); }
+
+    // 3. Check Auth & Load Page
+    try {
+        const userStr = localStorage.getItem('user');
+        let user = null;
+        if(userStr && userStr !== "undefined") {
+            user = JSON.parse(userStr);
+        }
+        
+        if (user) {
+            if (user.role === 'donor') loadDonorDashboard();
+            if (user.role === 'hospital') loadHospitalDashboard();
+        }
+    } catch(e) {
+        console.error("Auth Load Error:", e);
+        // Clear broken storage
+        localStorage.removeItem('user');
+    }
+
+    // 4. Load Public Data
+    try {
+        loadEmergencies();
+        loadHomeStats(); 
+    } catch(e) { console.warn("Data load warning:", e); }
+
+    // 5. Global Map for Home (New Feature)
+    try {
+        const homeSection = document.getElementById('home');
+        if(homeSection) {
+            // Check if map container already exists
+            if(!document.getElementById('global-live-map')) {
+                const mapContainer = document.createElement('div');
+                mapContainer.innerHTML = `
+                    <div class="glass-card-premium" style="margin: 40px 20px; padding: 0; min-height: 400px; position: relative; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); border-radius: 24px;">
+                        <div id="global-live-map" style="width: 100%; height: 100%; z-index: 1;"></div>
+                         <div style="position: absolute; top: 16px; left: 16px; z-index: 400; background: rgba(15, 23, 42, 0.9); padding: 6px 14px; border-radius: 50px; border: 1px solid rgba(255, 255, 255, 0.1); font-size: 0.8rem; display: flex; align-items: center; gap: 8px;">
+                            <span style="display: block; width: 8px; height: 8px; background: #EF4444; border-radius: 50%; box-shadow: 0 0 8px #EF4444; animation: pulse 2s infinite;"></span>
+                            Live Global Network
+                        </div>
+                    </div>
+                `;
+                
+                // Insert. Try to find main content or just append
+                const heroContent = homeSection.querySelector('.hero-content');
+                
+                if(heroContent) {
+                     heroContent.parentNode.insertBefore(mapContainer, heroContent.nextSibling);
+                } else {
+                     homeSection.appendChild(mapContainer);
+                }
+                
+                // Init Global Map
+                 setTimeout(async () => {
+                     try {
+                         const resp = await emergencyAPI.getAll({ status: 'active' });
+                         initMap('global-live-map', resp.emergencies);
+                     } catch(e) { console.log('Map init error', e); }
+                 }, 800); 
+            }
+        }
+    } catch(e) { console.warn("Home Map Error:", e); }
 });
