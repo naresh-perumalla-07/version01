@@ -29,6 +29,21 @@ const UserSchema = new mongoose.Schema(
       type: String,
       required: [true, 'City is required'],
     },
+    // --- Phase 2: Enhanced Profile ---
+    age: { type: Number },
+    gender: {
+        type: String,
+        enum: ['male', 'female', 'other']
+    },
+    address: {
+        street: String,
+        state: String,
+        zip: String
+    },
+    healthIssues: {
+        type: String,
+        default: 'None'
+    },
     role: {
       type: String,
       enum: ['donor', 'hospital', 'person', 'admin'],

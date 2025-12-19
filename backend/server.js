@@ -62,12 +62,23 @@ app.use((req, res) => {
   });
 });
 
+const http = require('http'); // [NEW]
+const socketLib = require('./socket'); // [NEW]
+
+// ... (middleware remains same until app.use(errorHandler))
+
 // Global error handler
 app.use(errorHandler);
 
+// Create HTTP Server [NEW]
+const server = http.createServer(app);
+
+// Init Socket.io [NEW]
+const io = socketLib.init(server);
+
 // Start server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+server.listen(PORT, () => { // Changed app.listen to server.listen
   console.log(`
     🩸 ============================================
     🩸 Blood Bridge Server Running!
@@ -75,6 +86,7 @@ app.listen(PORT, () => {
     📍 Environment: ${process.env.NODE_ENV}
     🔌 Port: ${PORT}
     📊 Database: MongoDB Atlas
+    ⚡ Socket.io: Active
     🌐 URL: http://localhost:${PORT}
     🩸 ============================================
   `);

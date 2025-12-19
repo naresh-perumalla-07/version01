@@ -1,0 +1,71 @@
+/* 
+   World-Class Animations 
+   Focused on 60fps performance and smooth easing
+*/
+
+/* Fade Up (Element Entry) */
+@keyframes fadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Slide In Right (Toasts) */
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Pulse (Emergency) */
+@keyframes pulse-glow {
+    0% {
+        box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.4);
+    }
+
+    70% {
+        box-shadow: 0 0 0 12px rgba(225, 29, 72, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(225, 29, 72, 0);
+    }
+}
+
+.anim-pulse {
+    animation: pulse-glow 2s infinite;
+}
+
+/* Loading Skeleton */
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+.skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+}
+
+/* Ping (System Active Badge) */
+@keyframes ping {
+    75%, 100% { transform: scale(2); opacity: 0; }
+}
