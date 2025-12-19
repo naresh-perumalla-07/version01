@@ -9,6 +9,7 @@ const errorHandler = require('./middleware/errorHandler');
 const authRoutes = require('./routes/auth');
 const emergencyRoutes = require('./routes/emergency');
 const donationRoutes = require('./routes/donation');
+const inventoryRoutes = require('./routes/inventory');
 
 const app = express();
 
@@ -37,6 +38,7 @@ app.use('/js', express.static(path.join(__dirname, '../frontend/js')));
 app.use('/api/auth', authRoutes);
 app.use('/api/emergencies', emergencyRoutes);
 app.use('/api/donations', donationRoutes);
+app.use('/api/inventory', inventoryRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

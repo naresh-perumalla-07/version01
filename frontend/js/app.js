@@ -139,59 +139,8 @@ const loadHomeStats = async () => {
 
         // --- RENDER DYNAMIC HERO STATUS ---
         if (heroStatusEl) {
-            // Check if there is a critical/latest emergency
-            const latest = response.emergencies && response.emergencies.length > 0 ? response.emergencies[0] : null;
-
-            if (latest) {
-                // RENDER ALERT CARD
-                heroStatusEl.innerHTML = `
-                    <div class="glass-card-premium" style="position: relative; width: 320px; overflow: visible !important; border: 1px solid rgba(225, 29, 72, 0.5); background: linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(225, 29, 72, 0.1)); box-shadow: 0 20px 60px rgba(225, 29, 72, 0.25);">
-                        <!-- Glowing Border -->
-                        <div style="position: absolute; inset: 0; border-radius: 24px; padding: 1px; background: linear-gradient(to bottom, rgba(225, 29, 72, 0.8), transparent); -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none;"></div>
-
-                        <div style="display: flex; gap: 16px; align-items: center; margin-bottom: 24px;">
-                            <div style="width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(225, 29, 72, 0.2); animation: radar-ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;">
-                                <div style="font-size: 1.5rem;">🩸</div>
-                            </div>
-                            <div>
-                                <div style="font-weight: 800; font-size: 1.1rem; color: white; letter-spacing: 0.02em;">LIVE SOS</div>
-                                <div style="font-size: 0.85rem; color: var(--danger-base); font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;">${latest.bloodGroup} • ${latest.unitsNeeded} UNITS</div>
-                            </div>
-                        </div>
-                        
-                        <div style="margin-bottom: 24px; padding: 16px; background: rgba(0,0,0,0.4); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem;">
-                                <span style="color: var(--text-secondary);">Location</span>
-                                <span style="font-weight: 600; color: #e2e8f0;">${latest.hospitalName || 'General Hospital'}</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; font-size: 0.9rem;">
-                                <span style="color: var(--text-secondary);">Urgency</span>
-                                <span style="color: #FF4444; font-weight: 800; text-shadow: 0 0 8px rgba(255, 68, 68, 0.4);">${latest.urgency ? latest.urgency.toUpperCase() : 'CRITICAL'}</span>
-                            </div>
-                        </div>
-
-                        <button onclick="respondToEmergency('${latest._id}')" class="btn btn-primary" style="width: 100%; height: 56px; font-size: 1.1rem; font-weight: 800; letter-spacing: 0.15em; text-transform: uppercase; background: linear-gradient(135deg, #9f1239 0%, #e11d48 100%); box-shadow: 0 0 30px rgba(225, 29, 72, 0.6); position: relative; overflow: hidden;">
-                            <span style="position: relative; z-index: 1;">RESPOND NOW</span>
-                            <span style="background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent); background-size: 200% 100%; animation: text-shimmer 2s linear infinite; position: absolute; inset: 0;"></span>
-                        </button>
-                    </div>
-                    ${getSystemOnlineBadge()}
-                `;
-            } else {
-                // RENDER "SYSTEM SECURE" STATE (No Alerts)
-                heroStatusEl.innerHTML = `
-                    <div class="glass-card-premium" style="position: relative; width: 320px; overflow: visible !important; border: 1px solid rgba(34, 197, 94, 0.3); background: rgba(15, 23, 42, 0.8);">
-                        <div style="display: flex; flex-direction: column; align-items: center; text-align: center; padding: 24px 0;">
-                            <div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(6, 182, 212, 0.2)); display: flex; align-items: center; justify-content: center; margin-bottom: 24px; box-shadow: 0 0 40px rgba(34, 197, 94, 0.2);">
-                                <div style="font-size: 2.5rem;">🛡️</div>
-                            </div>
-                            <h3 style="margin-bottom: 8px;">System Secure</h3>
-                            <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 0;">Monitoring 50km radius for emergency requests...</p>
-                        </div>
-                    </div>
-                    ${getSystemOnlineBadge()}
-                `;
-            }
+           heroStatusEl.innerHTML = ''; // Removed per user request
+           heroStatusEl.style.display = 'none';
         }
 
     } catch (e) {
@@ -268,95 +217,210 @@ const showNotification = (msg, type) => {
 
 // --- DONOR DASHBOARD ---
 const loadDonorDashboard = async () => {
-  try {
-    const user = JSON.parse(localStorage.getItem('user'));
-    if (!user) return;
+    try {
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (!user) return;
+    
+        // Initialize Sidebar
+        const sidebar = document.querySelector('#donor-dashboard .sidebar');
+        if (sidebar) {
+            sidebar.innerHTML = `
+                <div style="padding: 0 12px; margin-bottom: 12px; font-size: 0.75rem; color: var(--text-tertiary); font-weight: 700; text-transform: uppercase;">Donor Menu</div>
+                <div class="sidebar-item active" onclick="switchDonorTab('overview', this)">Overview</div>
+                <div class="sidebar-item" onclick="switchDonorTab('history', this)">My History</div>
+                <div class="sidebar-item" onclick="switchDonorTab('badges', this)">Achievements</div>
+            `;
+        }
 
-    const nameEl = document.getElementById('dash-user-name');
-    if (nameEl) nameEl.textContent = user.name;
+        const nameEl = document.getElementById('dash-user-name');
+        if (nameEl) nameEl.textContent = user.name;
 
-    // Stats with new design
-    const statsContainer = document.getElementById('donor-stats');
-    if (statsContainer) {
-      statsContainer.innerHTML = `
-          <div class="glass-card-premium" style="text-align: center; padding: 24px;">
-            <div style="font-size: 2.5rem; margin-bottom: 12px;">❤️</div>
-            <div style="font-size: 2rem; font-weight: 700; color: var(--action-brand); letter-spacing: -0.03em;">${user.totalDonations || 0}</div>
-            <div class="text-secondary text-sm font-medium uppercase tracking-wide">Total Donations</div>
-          </div>
-          <div class="glass-card-premium" style="text-align: center; padding: 24px;">
-            <div style="font-size: 2.5rem; margin-bottom: 12px;">👥</div>
-            <div style="font-size: 2rem; font-weight: 700; color: var(--info-base); letter-spacing: -0.03em;">${(user.totalDonations * 3) || 0}</div>
-            <div class="text-secondary text-sm font-medium uppercase tracking-wide">Lives Impacted</div>
-          </div>
-          <div class="glass-card-premium" style="text-align: center; padding: 24px;">
-            <div style="font-size: 2.5rem; margin-bottom: 12px;">🚨</div>
-            <div style="font-size: 2rem; font-weight: 700; color: var(--danger-base); letter-spacing: -0.03em;" id="active-emergencies-count">0</div>
-            <div class="text-secondary text-sm font-medium uppercase tracking-wide">Active Alerts</div>
-          </div>
+        // Load Data
+        const [activeRequests, history] = await Promise.all([
+             emergencyAPI.getAll({ status: 'active' }), // Get all active to filter by distance later (mock)
+             donationAPI.getMyHistory().catch(e => ({ donations: [], totalDonations: 0 }))
+        ]);
+
+        const myDonations = history.donations || [];
+        // Calculate Level based on donations
+        const donationCount = user.totalDonations || myDonations.length;
+        const level = donationCount > 10 ? 'Elite Hero' : donationCount > 5 ? 'Guardian' : 'Volunteer';
+
+        // Render Content Container
+        const contentDiv = document.querySelector('#donor-dashboard .content');
+        
+        // 1. Overview Tab
+        contentDiv.innerHTML = `
+        <div id="donor-view-overview">
+            <div style="margin-bottom: 32px; display: flex; justify-content: space-between; align-items: flex-end;">
+                 <div>
+                    <h2>Welcome back, <span style="color: var(--primary-main);">${user.name}</span></h2>
+                    <p>Current Rank: <strong style="color: #FBBF24;">${level}</strong></p>
+                 </div>
+                 <button onclick="switchDonorTab('badges', document.querySelectorAll('#donor-dashboard .sidebar-item')[2])" class="btn btn-secondary btn-sm" style="background: rgba(251, 191, 36, 0.1); color: #FBBF24; border: 1px solid rgba(251, 191, 36, 0.2);">
+                    View Badges
+                 </button>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px; margin-bottom: 48px;">
+                <div class="glass-card-premium" style="text-align: center; padding: 24px;">
+                    <div style="font-size: 2.5rem; margin-bottom: 12px;">❤️</div>
+                    <div style="font-size: 2rem; font-weight: 700; color: var(--action-brand); letter-spacing: -0.03em;">${donationCount}</div>
+                    <div class="text-secondary text-sm font-medium uppercase tracking-wide">Donations</div>
+                </div>
+                <div class="glass-card-premium" style="text-align: center; padding: 24px;">
+                    <div style="font-size: 2.5rem; margin-bottom: 12px;">👥</div>
+                    <div style="font-size: 2rem; font-weight: 700; color: var(--info-base); letter-spacing: -0.03em;">${donationCount * 3}</div>
+                    <div class="text-secondary text-sm font-medium uppercase tracking-wide">Lives Saved</div>
+                </div>
+                <div class="glass-card-premium" style="text-align: center; padding: 24px;">
+                    <div style="font-size: 2.5rem; margin-bottom: 12px;">🚨</div>
+                    <div style="font-size: 2rem; font-weight: 700; color: var(--danger-base); letter-spacing: -0.03em;">${activeRequests.count || 0}</div>
+                    <div class="text-secondary text-sm font-medium uppercase tracking-wide">Active Alerts</div>
+                </div>
+            </div>
+
+            <h3 style="margin-bottom: 24px;">Urgent Needs Near You</h3>
+            <div id="emergency-requests-donor" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px;">
+                ${renderDonorEmergencies(activeRequests.emergencies)}
+            </div>
+        </div>
+
+        <div id="donor-view-history" class="hidden">
+            <h2 style="margin-bottom: 24px;">Donation History</h2>
+            ${renderDonationHistory(myDonations)}
+        </div>
+
+        <div id="donor-view-badges" class="hidden">
+             <div style="text-align: center; margin-bottom: 32px;">
+                <h2>Your Trophy Components</h2>
+                <p>Unlock badges by responding to SOS calls and maintaining regular donations.</p>
+             </div>
+             
+             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 24px;">
+                ${renderBadges(donationCount)}
+             </div>
+        </div>
         `;
+
+    } catch (error) {
+        console.error('Error loading donor dashboard:', error);
     }
+};
 
-    // Requests
-    const response = await emergencyAPI.getAll({
-      bloodGroup: user.bloodGroup,
-      status: 'active'
-    });
+// --- DONOR HELPER FUNCTIONS ---
 
-    const countEl = document.getElementById('active-emergencies-count');
-    if (countEl) countEl.textContent = response.count;
-
-    const list = document.getElementById('emergency-requests-donor');
-    if (!list) return;
-
-    if (response.emergencies.length === 0) {
-      list.innerHTML = `
+const renderDonorEmergencies = (emergencies) => {
+    if (!emergencies || emergencies.length === 0) {
+      return `
             <div class="glass-card-premium" style="grid-column: 1 / -1; text-align: center; padding: 64px 24px;">
                 <div style="font-size: 3rem; margin-bottom: 16px; opacity: 0.5;">🛡️</div>
                 <h3 style="margin-bottom: 8px;">No Active Emergencies</h3>
                 <p>You are a hero in waiting. We will notify you when you are needed.</p>
             </div>
         `;
-    } else {
-      list.innerHTML = response.emergencies.map(e => `
-            <div class="glass-card-premium" style="display: flex; flex-direction: column; gap: 16px;">
-              <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <div class="badge" style="background: rgba(220, 38, 38, 0.2); color: #F87171; border: 1px solid rgba(220, 38, 38, 0.3);">SOS: ${e.bloodGroup}</div>
-                <div class="text-xs font-medium text-secondary">
-                    <span style="display: inline-block; width: 6px; height: 6px; background: #34D399; border-radius: 50%; margin-right: 4px;"></span>
-                    ${e.distance || '< 5'}km away
-                </div>
-              </div>
-              
-              <div>
-                <h3 style="font-size: 1.25rem; margin-bottom: 4px;">${e.hospitalName}</h3>
-                <div class="text-secondary text-sm">📍 ${e.location || 'Central Hospital'}</div>
-              </div>
-              
-              <div style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: 12px; font-size: 0.9rem; line-height: 1.5; border: 1px solid rgba(255,255,255,0.05);">
-                 <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                    <span class="text-secondary">Patient</span>
-                    <span class="font-medium">${e.patientName}</span>
-                 </div>
-                 <div style="display: flex; justify-content: space-between;">
-                    <span class="text-secondary">Needs</span>
-                    <span class="font-bold" style="color: var(--danger-text);">${e.unitsNeeded} Units</span>
-                 </div>
-              </div>
-
-              <button class="btn btn-primary" onclick="respondToEmergency('${e._id}')" style="width: 100%; justify-content: center; margin-top: auto;">
-                🚨 Respond Now
-              </button>
-            </div>
-        `).join('');
     }
 
-  } catch (error) {
-    console.error('Error loading donor dashboard:', error);
-  }
+    return emergencies.map(e => `
+        <div class="glass-card-premium" style="display: flex; flex-direction: column; gap: 16px; border-top: 4px solid var(--danger-base);">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div class="badge" style="background: rgba(220, 38, 38, 0.2); color: #F87171; border: 1px solid rgba(220, 38, 38, 0.3);">SOS: ${e.bloodGroup}</div>
+            <div class="text-xs font-medium text-secondary">
+                <span style="display: inline-block; width: 6px; height: 6px; background: #34D399; border-radius: 50%; margin-right: 4px;"></span>
+                ${e.distance || '< 5'}km away
+            </div>
+          </div>
+          
+          <div>
+            <h3 style="font-size: 1.25rem; margin-bottom: 4px;">${e.hospitalName}</h3>
+            <div class="text-secondary text-sm">📍 ${e.location || 'Central Hospital'}</div>
+          </div>
+          
+          <div style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: 12px; font-size: 0.9rem; line-height: 1.5; border: 1px solid rgba(255,255,255,0.05);">
+             <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                <span class="text-secondary">Patient</span>
+                <span class="font-medium">${e.patientName}</span>
+             </div>
+             <div style="display: flex; justify-content: space-between;">
+                <span class="text-secondary">Needs</span>
+                <span class="font-bold" style="color: var(--danger-text);">${e.unitsNeeded} Units</span>
+             </div>
+          </div>
+
+          <button class="btn btn-primary" onclick="respondToEmergency('${e._id}')" style="width: 100%; justify-content: center; margin-top: auto; box-shadow: 0 4px 12px rgba(225, 29, 72, 0.4);">
+             RESPOND NOW
+          </button>
+        </div>
+    `).join('');
+};
+
+const renderDonationHistory = (donations) => {
+    if(!donations || donations.length === 0) {
+        return `<div class="glass-card-premium text-secondary" style="text-align: center; padding: 40px;">No donation history available yet.</div>`;
+    }
+    return `
+    <div class="glass-card-premium" style="padding: 0;">
+       <table style="width: 100%; text-align: left; border-collapse: collapse;">
+         <thead style="background: rgba(0,0,0,0.2);">
+            <tr>
+                <th style="padding: 16px;">Date</th>
+                <th style="padding: 16px;">Location</th>
+                <th style="padding: 16px;">Units</th>
+                <th style="padding: 16px;">Certificate</th>
+            </tr>
+         </thead>
+         <tbody>
+            ${donations.map(d => `
+                <tr style="border-bottom: 1px solid var(--border-subtle);">
+                    <td style="padding: 16px;">${new Date(d.date || Date.now()).toLocaleDateString()}</td>
+                    <td style="padding: 16px; font-weight: 500;">${d.location || 'City Hospital'}</td>
+                    <td style="padding: 16px;">1 Unit</td>
+                    <td style="padding: 16px;"><button class="btn btn-secondary btn-sm">Download</button></td>
+                </tr>
+            `).join('')}
+         </tbody>
+       </table>
+    </div>`;
+};
+
+const renderBadges = (count) => {
+    const badges = [
+        { name: 'First Blood', icon: '🩸', req: 1, desc: 'Your first step to saving lives.' },
+        { name: 'Regular Hero', icon: '🎗️', req: 3, desc: 'Consistent commitment to the cause.' },
+        { name: 'Life Saver', icon: '🦁', req: 5, desc: 'Five donations. 15 lives impacted.' },
+        { name: 'Champion', icon: '🏆', req: 10, desc: 'Double digits! You are a legend.' },
+        { name: 'Guardian', icon: '🛡️', req: 20, desc: 'A pillar of the community.' },
+        { name: 'Immortal', icon: '⚡', req: 50, desc: 'Your legacy will live forever.' },
+    ];
+
+    return badges.map(b => {
+        const locked = count < b.req;
+        return `
+        <div class="glass-card-premium" style="text-align: center; opacity: ${locked ? 0.5 : 1}; filter: ${locked ? 'grayscale(1)' : 'none'}; border: ${locked ? '1px solid var(--border-subtle)' : '1px solid rgba(251, 191, 36, 0.4)'}; background: ${locked ? '' : 'linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(0,0,0,0))'};">
+            <div style="font-size: 3rem; margin-bottom: 12px;">${b.icon}</div>
+            <div style="font-weight: 700; color: ${locked ? 'var(--text-secondary)' : '#FBBF24'}; margin-bottom: 4px;">${b.name}</div>
+            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 12px;">${b.desc}</div>
+            ${locked 
+                ? `<div class="badge" style="background: rgba(255,255,255,0.1); color: var(--text-muted);">Locked (${count}/${b.req})</div>`
+                : `<div class="badge" style="background: rgba(251, 191, 36, 0.2); color: #FBBF24;">UNLOCKED</div>`
+            }
+        </div>
+    `}).join('');
+};
+
+window.switchDonorTab = (tabName, el) => {
+    document.querySelectorAll('#donor-dashboard .sidebar-item').forEach(i => i.classList.remove('active'));
+    if(el) el.classList.add('active');
+
+    document.getElementById('donor-view-overview').classList.add('hidden');
+    document.getElementById('donor-view-history').classList.add('hidden');
+    document.getElementById('donor-view-badges').classList.add('hidden');
+
+    document.getElementById(`donor-view-${tabName}`).classList.remove('hidden');
 };
 
 
+// --- HOSPITAL DASHBOARD ---
 // --- HOSPITAL DASHBOARD ---
 const loadHospitalDashboard = async () => {
   try {
@@ -372,19 +436,24 @@ const loadHospitalDashboard = async () => {
             <div style="padding: 0 12px; margin-bottom: 12px; font-size: 0.75rem; color: var(--text-tertiary); font-weight: 700; text-transform: uppercase;">Hospital Menu</div>
             <div class="sidebar-item active" onclick="switchHospitalTab('overview', this)">Overview</div>
             <div class="sidebar-item" onclick="switchHospitalTab('requests', this)">Active Requests</div>
-            <div class="sidebar-item" onclick="switchHospitalTab('inventory', this)">Inventory</div>
+            <div class="sidebar-item" onclick="switchHospitalTab('inventory', this)">Blood Inventory</div>
             <div class="sidebar-item" onclick="switchHospitalTab('analytics', this)">Analytics</div>
         `;
     }
 
-    // Load Data
-    const [allActive, myRequests] = await Promise.all([
+    // Load Initial Data
+    const [allActive, myRequests, inventoryData] = await Promise.all([
         emergencyAPI.getAll({ status: 'active' }),
-        emergencyAPI.getAll({ createdBy: 'me' })
+        emergencyAPI.getAll({ createdBy: 'me' }),
+        inventoryAPI.get().catch(e => ({ data: { bloodGroups: [] } })) // Safe fail
     ]);
 
     const activeCount = allActive.count || 0;
     const myActiveCount = myRequests.emergencies.filter(e => e.status === 'active').length;
+    const inventory = inventoryData.data || { bloodGroups: [] };
+
+    // Calculate total units
+    const totalUnits = inventory.bloodGroups.reduce((acc, curr) => acc + curr.units, 0);
 
     // Render Views
     const contentDiv = document.querySelector('#hospital-dashboard .content');
@@ -395,50 +464,106 @@ const loadHospitalDashboard = async () => {
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
                 <div>
                     <h2>Hospital Overview</h2>
-                    <p>Real-time view of emergency responses.</p>
+                    <p>Real-time ecosystem command center.</p>
                 </div>
-                <button onclick="showPage('emergency')" class="btn btn-primary">Create New Request</button>
+                <button onclick="showPage('emergency')" class="btn btn-primary" style="box-shadow: 0 0 20px rgba(225, 29, 72, 0.4);">
+                    <span style="font-size: 1.2rem;">📡</span> Broadcast SOS
+                </button>
             </div>
             
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; margin-bottom: 48px;">
-                 <div class="glass-card-premium">
-                    <div class="text-secondary text-sm font-medium uppercase tracking-wider mb-2">Network Active</div>
-                    <div style="font-size: 3rem; font-weight: 700; color: var(--danger-text); letter-spacing: -0.02em;">${activeCount}</div>
+            <!-- Quick Stats -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; margin-bottom: 40px;">
+                 <div class="glass-card-premium" style="background: linear-gradient(145deg, rgba(15, 23, 42, 0.6), rgba(34, 197, 94, 0.1));">
+                    <div class="text-secondary text-sm font-medium uppercase tracking-wider mb-2">My Active Alerts</div>
+                    <div style="font-size: 3rem; font-weight: 800; color: #4ADE80; letter-spacing: -0.02em;">${myActiveCount}</div>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">Donors responding...</div>
+                  </div>
+                  <div class="glass-card-premium" style="background: linear-gradient(145deg, rgba(15, 23, 42, 0.6), rgba(225, 29, 72, 0.1));">
+                     <div class="text-secondary text-sm font-medium uppercase tracking-wider mb-2">Total Inventory</div>
+                     <div style="font-size: 3rem; font-weight: 800; color: var(--danger-text); letter-spacing: -0.02em;">${totalUnits} <span style="font-size: 1rem; color: var(--text-muted);">Units</span></div>
+                     <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">Across all groups</div>
                   </div>
                   <div class="glass-card-premium">
-                     <div class="text-secondary text-sm font-medium uppercase tracking-wider mb-2">My Broadcasts</div>
-                     <div style="font-size: 3rem; font-weight: 700; color: var(--primary-main); letter-spacing: -0.02em;">${myActiveCount}</div>
+                     <div class="text-secondary text-sm font-medium uppercase tracking-wider mb-2">Lives Impacted</div>
+                     <div style="font-size: 3rem; font-weight: 800; color: var(--text-main); letter-spacing: -0.02em;">${(myRequests.count || 0) * 3}</div>
+                     <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">Estimated impact</div>
                   </div>
-                  <div class="glass-card-premium">
-                     <div class="text-secondary text-sm font-medium uppercase tracking-wider mb-2">Total History</div>
-                     <div style="font-size: 3rem; font-weight: 700; color: var(--text-main); letter-spacing: -0.02em;">${myRequests.count || 0}</div>
-                  </div>
+            </div>
+
+            <!-- Recent Activity / Visuals -->
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
+                <div class="glass-card-premium">
+                    <h3 style="margin-bottom: 20px; font-size: 1.25rem;">Recent Activity</h3>
+                    <div style="display: flex; flex-direction: column; gap: 16px;">
+                        ${myRequests.emergencies.slice(0, 3).map(e => `
+                            <div style="display: flex; align-items: center; gap: 16px; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.03);">
+                                <div style="width: 40px; height: 40px; border-radius: 10px; background: ${e.status === 'active' ? 'rgba(225, 29, 72, 0.2)' : 'rgba(34, 197, 94, 0.1)'}; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+                                    ${e.status === 'active' ? '🚨' : '✅'}
+                                </div>
+                                <div style="flex: 1;">
+                                    <div style="font-weight: 600; font-size: 0.95rem;">${e.patientName} (${e.bloodGroup})</div>
+                                    <div style="color: var(--text-secondary); font-size: 0.8rem;">${new Date(e.createdAt).toLocaleDateString()} • ${e.unitsNeeded} Units</div>
+                                </div>
+                                <div class="badge" style="font-size: 0.7rem;">${e.status.toUpperCase()}</div>
+                            </div>
+                        `).join('') || '<div class="text-secondary">No recent activity</div>'}
+                    </div>
+                </div>
+                
+                <!-- Quick Inventory Preview -->
+                <div class="glass-card-premium" style="display: flex; flex-direction: column;">
+                    <h3 style="margin-bottom: 20px; font-size: 1.25rem;">Inventory Status</h3>
+                    <div style="flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        ${renderMiniInventory(inventory.bloodGroups)}
+                    </div>
+                    <button onclick="switchHospitalTab('inventory', document.querySelectorAll('.sidebar-item')[2])" class="btn btn-secondary" style="width: 100%; margin-top: 16px; font-size: 0.85rem;">Manage Inventory</button>
+                </div>
             </div>
         </div>
 
         <div id="view-requests" class="hidden">
              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
-                <h2>Manage Broadcasts</h2>
+                <div>
+                    <h2>Manage Broadcasts</h2>
+                    <p>Track live emergencies and donor responses.</p>
+                </div>
                 <button onclick="showPage('emergency')" class="btn btn-primary">New Broadcast</button>
             </div>
             <div id="my-broadcasts-list" style="display: grid; gap: 16px;">
                 ${myRequests.emergencies.length === 0 
-                    ? `<div class="glass-card-premium text-secondary" style="text-align: center; padding: 40px;">No broadcasts history found.</div>`
+                    ? `<div class="glass-card-premium text-secondary" style="text-align: center; padding: 60px;">
+                        <div style="font-size: 3rem; margin-bottom: 16px; opacity: 0.3;">📡</div>
+                        No broadcasts history found. Make your first request to alert donors.
+                      </div>`
                     : myRequests.emergencies.map(e => `
-                        <div class="glass-card-premium" style="display: flex; justify-content: space-between; align-items: center;">
-                            <div>
-                                <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 4px;">
-                                    <span class="badge" style="${e.status === 'active' ? 'background: rgba(34, 197, 94, 0.2); color: #4ADE80; border: 1px solid rgba(34, 197, 94, 0.3);' : 'background: rgba(148, 163, 184, 0.2); color: var(--text-muted);'}">${e.status.toUpperCase()}</span>
-                                    <h4 style="margin: 0;">${e.patientName} (${e.bloodGroup})</h4>
+                        <div class="glass-card-premium" style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 20px; border-left: 4px solid ${e.status === 'active' ? 'var(--primary-main)' : 'var(--success-text)'};">
+                            <div style="display: flex; gap: 20px; align-items: center;">
+                                <div style="width: 56px; height: 56px; background: var(--bg-surface); border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid var(--border-subtle);">
+                                    <span style="font-weight: 800; font-size: 1.2rem; color: var(--danger-text);">${e.bloodGroup}</span>
+                                    <span style="font-size: 0.65rem; text-transform: uppercase; color: var(--text-secondary);">Group</span>
                                 </div>
-                                <div class="text-secondary text-sm">
-                                    ${new Date(e.createdAt).toLocaleDateString()} • Units: ${e.unitsNeeded} • Responses: ${e.respondents ? e.respondents.length : 0}
+                                <div>
+                                    <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 4px;">
+                                        <h3 style="margin: 0; font-size: 1.1rem;">${e.patientName}</h3>
+                                        <span class="badge" style="${e.status === 'active' ? 'background: rgba(225, 29, 72, 0.15); color: #F87171;' : 'background: rgba(34, 197, 94, 0.2); color: #4ADE80;'}">${e.status.toUpperCase()}</span>
+                                    </div>
+                                    <div class="text-secondary text-sm">
+                                        Requested: ${new Date(e.createdAt).toLocaleDateString()} • Needed: <strong style="color: white;">${e.unitsNeeded} Units</strong>
+                                    </div>
                                 </div>
                             </div>
-                            <div>
+                            
+                            <div style="display: flex; align-items: center; gap: 24px;">
+                                <div style="text-align: right;">
+                                    <div style="font-weight: 700; font-size: 1.2rem;">${e.respondents ? e.respondents.length : 0}</div>
+                                    <div class="text-sm text-secondary">Responders</div>
+                                </div>
+                                <div style="width: 1px; height: 40px; background: var(--border-subtle);"></div>
                                 ${e.status === 'active' 
-                                    ? `<button onclick="markFulfilled('${e._id}')" class="btn btn-secondary btn-sm" style="border-color: var(--success-text); color: var(--success-text);">✅ Mark Completed</button>`
-                                    : `<span class="text-secondary text-sm">Archived</span>`
+                                    ? `<button onclick="markFulfilled('${e._id}')" class="btn btn-secondary btn-sm" style="border-color: var(--success-text); color: var(--success-text); gap: 8px;">
+                                        <span style="font-size: 1.1rem;">✅</span> Mark Done
+                                       </button>`
+                                    : `<button class="btn btn-ghost btn-sm" disabled>Archived</button>`
                                 }
                             </div>
                         </div>
@@ -448,39 +573,210 @@ const loadHospitalDashboard = async () => {
         </div>
 
         <div id="view-inventory" class="hidden">
-            <h2 style="margin-bottom: 24px;">Blood Inventory</h2>
-            <div class="glass-card-premium">
-                <table style="width: 100%; border-collapse: collapse; color: var(--text-body);">
-                    <thead>
-                        <tr style="border-bottom: 1px solid var(--border-subtle); text-align: left;">
-                            <th style="padding: 12px;">Group</th>
-                            <th style="padding: 12px;">Units Available</th>
-                            <th style="padding: 12px;">Status</th>
-                            <th style="padding: 12px;">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr><td style="padding: 12px; font-weight: bold;">A+</td><td style="padding: 12px;">45</td><td style="padding: 12px; color: var(--success-text);">Good</td><td style="padding: 12px;"><button class="btn btn-secondary btn-sm" style="padding: 4px 12px;">Update</button></td></tr>
-                        <tr><td style="padding: 12px; font-weight: bold;">O+</td><td style="padding: 12px;">12</td><td style="padding: 12px; color: var(--danger-text);">Low</td><td style="padding: 12px;"><button class="btn btn-secondary btn-sm" style="padding: 4px 12px;">Update</button></td></tr>
-                        <tr><td style="padding: 12px; font-weight: bold;">B-</td><td style="padding: 12px;">8</td><td style="padding: 12px; color: var(--danger-text);">Critical</td><td style="padding: 12px;"><button class="btn btn-secondary btn-sm" style="padding: 4px 12px;">Update</button></td></tr>
-                        <tr><td style="padding: 12px; font-weight: bold;">AB+</td><td style="padding: 12px;">22</td><td style="padding: 12px; color: var(--text-muted);">Stable</td><td style="padding: 12px;"><button class="btn btn-secondary btn-sm" style="padding: 4px 12px;">Update</button></td></tr>
-                    </tbody>
-                </table>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
+                <div>
+                   <h2 style="margin-bottom: 8px;">Bank Inventory</h2>
+                   <p>Live tracking of blood units. Updates propagate instantly.</p>
+                </div>
+                <div class="badge" style="background: rgba(225, 29, 72, 0.1); border: 1px solid rgba(225, 29, 72, 0.2); color: #FDA4AF;">
+                    Last Updated: ${inventory.lastUpdated ? new Date(inventory.lastUpdated).toLocaleTimeString() : 'Just now'}
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px;" id="inventory-grid">
+                ${renderFullInventory(inventory.bloodGroups)}
             </div>
         </div>
         
         <div id="view-analytics" class="hidden">
-             <div class="glass-card-premium" style="text-align: center; padding: 40px;">
-                <h3>Analytics Module</h3>
-                <p>Detailed reports coming in v2.1</p>
+             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
+                <div>
+                    <h2>Performance Analytics</h2>
+                    <p>Weekly demand vs supply analysis.</p>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <div style="display: flex; align-items: center; gap: 6px; font-size: 0.8rem;">
+                        <span style="width: 12px; height: 12px; background: var(--primary-main); border-radius: 2px;"></span> Broadcasts
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 6px; font-size: 0.8rem;">
+                        <span style="width: 12px; height: 12px; background: #34D399; border-radius: 2px;"></span> Fulfilled
+                    </div>
+                </div>
+             </div>
+
+             <!-- CSS Only Bar Chart -->
+             <div class="glass-card-premium" style="padding: 32px; height: 400px; display: flex; align-items: flex-end; justify-content: space-between; gap: 16px;">
+                <!-- Mon -->
+                <div style="flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; gap: 8px;">
+                     <div style="width: 100%; display: flex; align-items: flex-end; justify-content: center; gap: 4px; height: 80%;">
+                        <div style="width: 12px; height: 40%; background: var(--primary-main); border-radius: 4px 4px 0 0; opacity: 0.8;"></div>
+                        <div style="width: 12px; height: 35%; background: #34D399; border-radius: 4px 4px 0 0; opacity: 0.8;"></div>
+                     </div>
+                     <div style="font-size: 0.8rem; color: var(--text-secondary);">Mon</div>
+                </div>
+                <!-- Tue -->
+                <div style="flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; gap: 8px;">
+                     <div style="width: 100%; display: flex; align-items: flex-end; justify-content: center; gap: 4px; height: 80%;">
+                        <div style="width: 12px; height: 65%; background: var(--primary-main); border-radius: 4px 4px 0 0; opacity: 0.8;"></div>
+                        <div style="width: 12px; height: 50%; background: #34D399; border-radius: 4px 4px 0 0; opacity: 0.8;"></div>
+                     </div>
+                     <div style="font-size: 0.8rem; color: var(--text-secondary);">Tue</div>
+                </div>
+                <!-- Wed -->
+                <div style="flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; gap: 8px;">
+                     <div style="width: 100%; display: flex; align-items: flex-end; justify-content: center; gap: 4px; height: 80%;">
+                        <div style="width: 12px; height: 85%; background: var(--primary-main); border-radius: 4px 4px 0 0; opacity: 0.8;"></div>
+                        <div style="width: 12px; height: 80%; background: #34D399; border-radius: 4px 4px 0 0; opacity: 0.8;"></div>
+                     </div>
+                     <div style="font-size: 0.8rem; color: var(--text-secondary);">Wed</div>
+                </div>
+                <!-- Thu -->
+                <div style="flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; gap: 8px;">
+                     <div style="width: 100%; display: flex; align-items: flex-end; justify-content: center; gap: 4px; height: 80%;">
+                        <div style="width: 12px; height: 55%; background: var(--primary-main); border-radius: 4px 4px 0 0; opacity: 0.8;"></div>
+                        <div style="width: 12px; height: 45%; background: #34D399; border-radius: 4px 4px 0 0; opacity: 0.8;"></div>
+                     </div>
+                     <div style="font-size: 0.8rem; color: var(--text-secondary);">Thu</div>
+                </div>
+                <!-- Fri -->
+                <div style="flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; gap: 8px;">
+                     <div style="width: 100%; display: flex; align-items: flex-end; justify-content: center; gap: 4px; height: 80%;">
+                        <div style="width: 12px; height: 90%; background: var(--primary-main); border-radius: 4px 4px 0 0; opacity: 0.8;"></div>
+                        <div style="width: 12px; height: 88%; background: #34D399; border-radius: 4px 4px 0 0; opacity: 0.8;"></div>
+                     </div>
+                     <div style="font-size: 0.8rem; color: var(--text-secondary);">Fri</div>
+                </div>
+                <!-- Sat -->
+                <div style="flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; gap: 8px;">
+                     <div style="width: 100%; display: flex; align-items: flex-end; justify-content: center; gap: 4px; height: 80%;">
+                        <div style="width: 12px; height: 30%; background: var(--primary-main); border-radius: 4px 4px 0 0; opacity: 0.8;"></div>
+                        <div style="width: 12px; height: 30%; background: #34D399; border-radius: 4px 4px 0 0; opacity: 0.8;"></div>
+                     </div>
+                     <div style="font-size: 0.8rem; color: var(--text-secondary);">Sat</div>
+                </div>
+                <!-- Sun -->
+                <div style="flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; gap: 8px;">
+                     <div style="width: 100%; display: flex; align-items: flex-end; justify-content: center; gap: 4px; height: 80%;">
+                        <div style="width: 12px; height: 20%; background: var(--primary-main); border-radius: 4px 4px 0 0; opacity: 0.8;"></div>
+                        <div style="width: 12px; height: 15%; background: #34D399; border-radius: 4px 4px 0 0; opacity: 0.8;"></div>
+                     </div>
+                     <div style="font-size: 0.8rem; color: var(--text-secondary);">Sun</div>
+                </div>
+             </div>
+             
+             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; margin-top: 24px;">
+                <div class="glass-card-premium" style="display: flex; flex-direction: column; gap: 8px;">
+                    <div class="text-secondary text-sm">Response Rate</div>
+                    <div style="font-size: 2rem; font-weight: 800; color: #34D399;">92%</div>
+                    <div style="font-size: 0.8rem; color: var(--text-secondary);">+4% vs last week</div>
+                </div>
+                <div class="glass-card-premium" style="display: flex; flex-direction: column; gap: 8px;">
+                    <div class="text-secondary text-sm">Avg. Response Time</div>
+                    <div style="font-size: 2rem; font-weight: 800; color: #60A5FA;">12m</div>
+                    <div style="font-size: 0.8rem; color: var(--text-secondary);">-2m vs last week</div>
+                </div>
+                <div class="glass-card-premium" style="display: flex; flex-direction: column; gap: 8px;">
+                    <div class="text-secondary text-sm">Critical Shortages</div>
+                    <div style="font-size: 2rem; font-weight: 800; color: #F87171;">2</div>
+                    <div style="font-size: 0.8rem; color: var(--text-secondary);">O+, B-</div>
+                </div>
              </div>
         </div>
     `;
 
   } catch (error) {
     console.error('Error loading hospital dashboard:', error);
+    showNotification('Failed to load dashboard data', 'error');
   }
 };
+
+// --- HELPER FUNCTIONS FOR INVENTORY ---
+
+const renderMiniInventory = (groups) => {
+    // Show top 4 most critical (lowest) or just first 4
+    // Make sure we have mock data if empty
+    if(!groups || groups.length === 0) return '<div class="text-secondary text-sm">No data</div>';
+    
+    // Sort logic could go here, for now just slice
+    return groups.slice(0, 4).map(g => `
+        <div style="padding: 8px; border-radius: 8px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle);">
+            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 4px;">${g.type}</div>
+            <div style="font-weight: 700; color: ${g.units < 5 ? 'var(--danger-text)' : 'white'};">
+                ${g.units} <span style="font-size: 0.7rem; font-weight: 400; opacity: 0.7;">units</span>
+            </div>
+        </div>
+    `).join('');
+};
+
+const renderFullInventory = (groups) => {
+    if(!groups || groups.length === 0) return '<div>No inventory initialized</div>';
+
+    return groups.map(g => {
+        // Visual Level Calculation (Max assumption 50 units for visual)
+        const percentage = Math.min(100, (g.units / 50) * 100);
+        const isCritical = g.units < 5;
+        const colorVar = isCritical ? 'var(--danger-base)' : 'var(--primary-main)';
+        
+        return `
+        <div class="glass-card-premium" style="position: relative; overflow: hidden; padding: 0;">
+            <!-- Content -->
+            <div style="padding: 24px; position: relative; z-index: 2;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+                    <div style="width: 48px; height: 48px; border-radius: 12px; background: ${isCritical ? 'rgba(239, 68, 68, 0.1)' : 'rgba(225, 29, 72, 0.1)'}; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; font-weight: 800; color: ${isCritical ? '#F87171' : '#FB7185'}; border: 1px solid ${isCritical ? 'rgba(239, 68, 68, 0.2)' : 'rgba(225, 29, 72, 0.2)'};">
+                        ${g.type}
+                    </div>
+                    ${isCritical ? `<div class="badge" style="background: rgba(239, 68, 68, 0.2); color: #F87171; border: 1px solid rgba(239, 68, 68, 0.3);">CRITICAL</div>` : ''}
+                </div>
+                
+                <div style="margin-bottom: 24px;">
+                    <div style="font-size: 2.5rem; font-weight: 800; line-height: 1; margin-bottom: 4px;">${g.units}</div>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary);">Units Available</div>
+                </div>
+
+                <!-- Controls -->
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <button onclick="updateInventory('${g.type}', 1, 'remove')" class="btn btn-secondary btn-sm" style="width: 32px; height: 32px; padding: 0; border-radius: 8px;">-</button>
+                    <button onclick="updateInventory('${g.type}', 1, 'add')" class="btn btn-secondary btn-sm" style="width: 32px; height: 32px; padding: 0; border-radius: 8px;">+</button>
+                    <button onclick="editInventory('${g.type}', ${g.units})" class="btn btn-secondary btn-sm" style="flex: 1; font-size: 0.8rem;">Edit</button>
+                </div>
+            </div>
+
+            <!-- Liquid/Graph Background Effect -->
+            <div style="position: absolute; bottom: 0; left: 0; width: 100%; height: ${Math.max(5, percentage)}%; background: ${colorVar}; opacity: 0.1; transition: height 1s cubic-bezier(0.4, 0, 0.2, 1); z-index: 1;"></div>
+            <div style="position: absolute; bottom: 0; left: 0; width: 100%; height: 4px; background: ${colorVar}; opacity: 0.3; z-index: 1;"></div>
+        </div>
+    `}).join('');
+};
+
+window.updateInventory = async (type, units, action) => {
+    try {
+        await inventoryAPI.update({ bloodGroup: type, units, action });
+        // Refresh just the inventory tab or data
+        // For smoothness, we re-fetch and re-render
+        // Ideally we update local state, but full reload is safer for now
+        const resp = await inventoryAPI.get();
+        const grid = document.getElementById('inventory-grid');
+        if(grid) {
+            grid.innerHTML = renderFullInventory(resp.data.bloodGroups);
+        }
+        showNotification(`${type} updated successfully`, 'success');
+    } catch(e) {
+        showNotification(e.message, 'error');
+    }
+}
+
+window.editInventory = async (type, current) => {
+    const newVal = prompt(`Set total units for ${type}:`, current);
+    if(newVal === null) return;
+    const units = parseInt(newVal);
+    if(isNaN(units) || units < 0) {
+        showNotification('Invalid number', 'error');
+        return;
+    }
+    
+    // Direct set
+    window.updateInventory(type, units, 'set');
+}
 
 // Tab Switcher Logic
 window.switchHospitalTab = (tabName, el) => {

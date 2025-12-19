@@ -107,3 +107,23 @@ const donationAPI = {
         return response.json();
     }
 };
+
+const inventoryAPI = {
+    get: async () => {
+        const response = await fetch(`${API_URL}/inventory`, {
+            headers: getHeaders()
+        });
+        if (!response.ok) throw new Error('Failed to fetch inventory');
+        return response.json();
+    },
+    update: async (data) => {
+        // data: { bloodGroup, units, action }
+        const response = await fetch(`${API_URL}/inventory`, {
+            method: 'PUT',
+            headers: getHeaders(),
+            body: JSON.stringify(data)
+        });
+        if (!response.ok) throw new Error('Failed to update inventory');
+        return response.json();
+    }
+};
