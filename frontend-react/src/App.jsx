@@ -12,6 +12,7 @@ import HospitalDashboard from './pages/HospitalDashboard';
 import FindBlood from './pages/FindBlood';
 import ProtectedRoute from './components/ProtectedRoute';
 import ChatWindow from './components/ChatWindow';
+import GlobalNotifications from './components/GlobalNotifications';
 import './assets/css/styles.css';
 import './assets/css/animations.css';
 
@@ -62,6 +63,14 @@ function App() {
                     onClose={() => setChatRecipient(null)} 
                 />
             )}
+            {chatRecipient && (
+                <ChatWindow 
+                    recipientId={chatRecipient.id} 
+                    recipientName={chatRecipient.name} 
+                    onClose={() => setChatRecipient(null)} 
+                />
+            )}
+            <GlobalNotifications currentChatId={chatRecipient?.id} />
             <Footer />
         </Router>
       </SocketProvider>

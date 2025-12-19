@@ -5,7 +5,8 @@ const EmergencyDetailsModal = ({ emergency, onClose }) => {
     if (!emergency) return null;
 
     const handleChat = () => {
-        window.dispatchEvent(new CustomEvent('openChat', { detail: { id: emergency._id, name: emergency.hospitalName } }));
+        const recipientId = emergency.createdBy?._id || emergency.createdBy || 'admin';
+        window.dispatchEvent(new CustomEvent('openChat', { detail: { id: recipientId, name: emergency.hospitalName } }));
         onClose();
     };
 
@@ -24,18 +25,21 @@ const EmergencyDetailsModal = ({ emergency, onClose }) => {
             <div className="glass-card-premium" style={{ width: '90%', maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto', padding: '0', animation: 'scaleUp 0.3s ease' }}>
                 
                 {/* Header Map */}
-                <div style={{ height: '250px', background: '#334155', position: 'relative' }}>
-                    {/* Placeholder for map - ideally we pass coordinates to LiveMap or similar */}
-                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'url(https://docs.mapbox.com/mapbox-gl-js/assets/radar.gif) center/cover' }}>
-                        <div style={{ color: 'white', background: 'rgba(0,0,0,0.6)', padding: '8px 16px', borderRadius: '8px' }}>
-                            📍 {emergency.hospitalName}
-                        </div>
+                <div style={{ height: '300px', background: '#334155', position: 'relative' }}>
+                    {/* Live Map in Read-Only Mode (Interactive) */}
+                     <div style={{ width: '100%', height: '100%' }}>
+                        <LiveMap /> 
+                        {/* Note: LiveMap handles its own data fetching. 
+                            Ideally we pass 'center' props or similar to focus on this emergency. 
+                            For this hackathon, showing the full map is functionally acceptable 
+                            as long as the user sees the markers. 
+                        */}
                     </div>
                     
                     <button onClick={onClose} style={{
                         position: 'absolute', top: '16px', right: '16px',
                         background: 'rgba(0,0,0,0.5)', border: 'none', color: 'white',
-                        width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer', fontSize: '1.2rem'
+                        width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer', fontSize: '1.2rem', zIndex: 10
                     }}>&times;</button>
                 </div>
 
@@ -64,6 +68,12 @@ const EmergencyDetailsModal = ({ emergency, onClose }) => {
                         <div className="card" style={{ background: 'rgba(255,255,255,0.03)' }}>
                             <div style={{ fontSize: '0.9rem', color: '#888' }}>Contact Person</div>
                             <div style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>{emergency.contactPerson || 'Dr. Smith'}</div>
+                        </div>
+                         <div className="card" style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                            <div style={{ fontSize: '0.9rem', color: '#34D399' }}>Live Response</div>
+                            <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#34D399' }}>
+                                {emergency.respondents?.length || 0} Donors Acting
+                            </div>
                         </div>
                     </div>
 

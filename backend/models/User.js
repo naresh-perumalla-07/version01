@@ -34,6 +34,7 @@ const UserSchema = new mongoose.Schema(
     gender: { type: String },
     height: { type: Number }, // in cm
     weight: { type: Number }, // in kg
+    unitsNeeded: { type: Number, default: 0 },
     bloodGroup: { type: String, enum: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] },
     address: {
         street: String,
@@ -53,7 +54,7 @@ const UserSchema = new mongoose.Schema(
       type: String,
       enum: ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'],
       required: function() {
-        return this.role === 'donor';
+        return this.role === 'donor' || this.role === 'person';
       },
     },
     latitude: {

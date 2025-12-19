@@ -18,7 +18,7 @@ const isDbConnected = () => require('mongoose').connection.readyState === 1;
 // @access  Public
 exports.register = async (req, res, next) => {
   try {
-    const { name, email, password, phone, city, role, bloodGroup } = req.body;
+    const { name, email, password, phone, city, role, bloodGroup, age, gender, height, weight, address, unitsNeeded } = req.body;
 
     if (isDbConnected()) {
       // Check if user already exists
@@ -30,7 +30,8 @@ exports.register = async (req, res, next) => {
       // Create new user
       user = new User({
         name, email, password, phone, city, role,
-        bloodGroup: role === 'donor' ? bloodGroup : null,
+        age, gender, height, weight, address, unitsNeeded,
+        bloodGroup: (role === 'donor' || role === 'person') ? bloodGroup : null,
       });
 
       await user.save();
@@ -49,7 +50,7 @@ exports.register = async (req, res, next) => {
       const newUser = {
         _id: 'mock_' + Date.now(),
         name, email, password, phone, city, role,
-        bloodGroup: role === 'donor' ? bloodGroup : null,
+        bloodGroup: (role === 'donor' || role === 'person') ? bloodGroup : null,
         totalDonations: 0
       };
 
@@ -143,7 +144,7 @@ exports.getCurrentUser = async (req, res, next) => {
 // @access  Private
 exports.updateProfile = async (req, res, next) => {
   try {
-    const { name, city, phone, bloodGroup } = req.body;
+    const { name, city, phone, bloodGroup, age, height, weight, address, unitsNeeded } = req.body;
 
     if (isDbConnected()) {
       const user = await User.findById(req.userId);
@@ -152,7 +153,12 @@ exports.updateProfile = async (req, res, next) => {
       if (name) user.name = name;
       if (city) user.city = city;
       if (phone) user.phone = phone;
-      if (bloodGroup && user.role === 'donor') user.bloodGroup = bloodGroup;
+      if (age) user.age = age;
+      if (height) user.height = height;
+      if (weight) user.weight = weight;
+      if (unitsNeeded) user.unitsNeeded = unitsNeeded;
+      if (address) user.address = { ...user.address, ...address };
+      if (bloodGroup && (user.role === 'donor' || user.role === 'person')) user.bloodGroup = bloodGroup;
 
       await user.save();
 
@@ -173,7 +179,7 @@ exports.updateProfile = async (req, res, next) => {
       if (name) user.name = name;
       if (city) user.city = city;
       if (phone) user.phone = phone;
-      if (bloodGroup && user.role === 'donor') user.bloodGroup = bloodGroup;
+      if (bloodGroup && (user.role === 'donor' || user.role === 'person')) user.bloodGroup = bloodGroup;
 
       return res.status(200).json({
         success: true,

@@ -22,7 +22,10 @@ const Register = () => {
         addressStreet: '',
         addressState: '',
         addressZip: '',
-        healthIssues: 'None'
+        addressState: '',
+        addressZip: '',
+        healthIssues: 'None',
+        unitsNeeded: ''
     });
 
     const handleChange = (e) => {
@@ -33,8 +36,8 @@ const Register = () => {
         e.preventDefault();
         setError('');
 
-        if (formData.role === 'donor' && !formData.bloodGroup) {
-            setError('Blood Group is required for Donors.');
+        if ((formData.role === 'donor' || formData.role === 'person') && !formData.bloodGroup) {
+            setError('Blood Group is required.');
             return;
         }
 
@@ -77,7 +80,7 @@ const Register = () => {
                             <select name="role" className="input" value={formData.role} onChange={handleChange}>
                                 <option value="donor">Donor</option>
                                 
-                                <option value="person">Requestor (Looking for Blood)</option>
+                                <option value="person">Receiver (Looking for Blood)</option>
                             </select>
                         </div>
                     </div>
@@ -120,7 +123,7 @@ const Register = () => {
                                 <option value="other">Other</option>
                             </select>
                         </div>
-                        {formData.role === 'donor' && (
+                        {(formData.role === 'donor' || formData.role === 'person') && (
                             <div className="form-group">
                                 <label className="label">Blood Group</label>
                                 <select name="bloodGroup" className="input" value={formData.bloodGroup} onChange={handleChange} required>
@@ -134,6 +137,12 @@ const Register = () => {
                                     <option value="AB+">AB+</option>
                                     <option value="AB-">AB-</option>
                                 </select>
+                            </div>
+                        )}
+                        {formData.role === 'person' && (
+                            <div className="form-group">
+                                <label className="label">Units Needed</label>
+                                <input type="number" name="unitsNeeded" className="input" placeholder="e.g. 2" value={formData.unitsNeeded} onChange={handleChange} required />
                             </div>
                         )}
                     </div>

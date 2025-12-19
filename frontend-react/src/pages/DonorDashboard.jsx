@@ -4,6 +4,7 @@ import { useSocket } from '../context/SocketContext';
 import api from '../api';
 
 import EmergencyDetailsModal from '../components/EmergencyDetailsModal';
+import EditProfileModal from '../components/EditProfileModal';
 
 const DonorDashboard = () => {
     const { user, logout } = useAuth();
@@ -11,6 +12,7 @@ const DonorDashboard = () => {
     const [alerts, setAlerts] = useState([]);
     const [activeTab, setActiveTab] = useState('overview');
     const [selectedEmergency, setSelectedEmergency] = useState(null);
+    const [isEditingProfile, setIsEditingProfile] = useState(false);
 
     useEffect(() => {
         if (!socket) return;
@@ -27,6 +29,24 @@ const DonorDashboard = () => {
         // Listen for updates (Fulfillment, Responses)
         socket.on('emergency_updated', (data) => {
             console.log("🔄 UPDATE:", data);
+            
+            if (data.type === 'response') {
+                // Show notification that someone responded
+                const toast = document.createElement('div');
+                toast.className = 'glass-card-premium fade-in-up';
+                toast.style.position = 'fixed';
+                toast.style.bottom = '80px';
+                toast.style.left = '50%';
+                toast.style.transform = 'translateX(-50%)';
+                toast.style.zIndex = '3000';
+                toast.style.padding = '12px 24px';
+                toast.style.border = '1px solid #34D399';
+                toast.style.color = '#34D399';
+                toast.innerHTML = `🙌 A Donor just responded to an emergency! (${data.respondents} total)`;
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 4000);
+            }
+
             if (data.type === 'status_change' && data.status === 'fulfilled') {
                 // Remove the fulfilled emergency
                 setAlerts(prev => prev.filter(e => e._id !== data.emergencyId));
@@ -106,7 +126,10 @@ const DonorDashboard = () => {
                                             </button>
                                             <button 
                                                 className="btn btn-primary anim-pulse"
-                                                onClick={() => window.dispatchEvent(new CustomEvent('openChat', { detail: { id: alert._id || 'admin', name: alert.hospitalName } }))}
+                                                onClick={() => {
+                                                    const recipientId = alert.createdBy?._id || alert.createdBy || 'admin';
+                                                    window.dispatchEvent(new CustomEvent('openChat', { detail: { id: recipientId, name: alert.hospitalName } }));
+                                                }}
                                             >
                                                 Respond Now
                                             </button>
@@ -120,7 +143,10 @@ const DonorDashboard = () => {
                 
                 {activeTab === 'profile' && (
                     <div className="card">
-                        <h3>Profile Settings</h3>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <h3>Profile Settings</h3>
+                            <button className="btn btn-secondary" onClick={() => setIsEditingProfile(true)}>✏️ Edit</button>
+                        </div>
                         <p><strong>Age:</strong> {user?.age || 'N/A'}</p>
                         <p><strong>Address:</strong> {user?.city}, {user?.address?.street}</p>
                         <p><strong>Height:</strong> {user?.height} cm</p>
@@ -132,6 +158,10 @@ const DonorDashboard = () => {
                     emergency={selectedEmergency} 
                     onClose={() => setSelectedEmergency(null)} 
                 />
+
+                {isEditingProfile && (
+                    <EditProfileModal onClose={() => setIsEditingProfile(false)} />
+                )}
 
             </main>
         </div>
