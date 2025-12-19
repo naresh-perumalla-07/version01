@@ -64,3 +64,8 @@
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
 }
+
+/* Ping (System Active Badge) */
+@keyframes ping {
+    75%, 100% { transform: scale(2); opacity: 0; }
+}

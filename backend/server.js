@@ -20,6 +20,13 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Disable caching for development
+app.set('etag', false);
+app.use((req, res, next) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  next();
+});
+
 // Serve static files from frontend public dir (html)
 app.use(express.static(path.join(__dirname, '../frontend/public')));
 // Serve CSS and JS specifically

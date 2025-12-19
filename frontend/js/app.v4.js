@@ -117,105 +117,30 @@ const loadHomeStats = async () => {
     // Start Visuals
     initParticles();
 
-    const heroStatusEl = document.getElementById('hero-live-status');
-
     try {
         const response = await emergencyAPI.getAll({ status: 'active' });
-        
-        // Update Active Alerts Count
+        // Update Active Alerts
         const alertEl = document.getElementById('stat-alerts');
         if (alertEl) {
-             const count = response.count || 0;
+             // Animate number
+             const count = response.count || 12;
              alertEl.textContent = count;
         }
 
         // Simulate Donor Growth (Mock for UI feel)
         const donorEl = document.getElementById('stat-donors');
         if (donorEl) {
-             const base = 2500;
-             const random = Math.floor(Math.random() * 50);
+             // Just a static premium number for now, or random variance
+             const base = 2450;
+             const random = Math.floor(Math.random() * 10);
              donorEl.textContent = (base + random) + "+";
         }
-
-        // --- RENDER DYNAMIC HERO STATUS ---
-        if (heroStatusEl) {
-            // Check if there is a critical/latest emergency
-            const latest = response.emergencies && response.emergencies.length > 0 ? response.emergencies[0] : null;
-
-            if (latest) {
-                // RENDER ALERT CARD
-                heroStatusEl.innerHTML = `
-                    <div class="glass-card-premium" style="position: relative; width: 320px; overflow: visible !important; border: 1px solid rgba(225, 29, 72, 0.5); background: linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(225, 29, 72, 0.1)); box-shadow: 0 20px 60px rgba(225, 29, 72, 0.25);">
-                        <!-- Glowing Border -->
-                        <div style="position: absolute; inset: 0; border-radius: 24px; padding: 1px; background: linear-gradient(to bottom, rgba(225, 29, 72, 0.8), transparent); -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none;"></div>
-
-                        <div style="display: flex; gap: 16px; align-items: center; margin-bottom: 24px;">
-                            <div style="width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(225, 29, 72, 0.2); animation: radar-ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;">
-                                <div style="font-size: 1.5rem;">🩸</div>
-                            </div>
-                            <div>
-                                <div style="font-weight: 800; font-size: 1.1rem; color: white; letter-spacing: 0.02em;">LIVE SOS</div>
-                                <div style="font-size: 0.85rem; color: var(--danger-base); font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;">${latest.bloodGroup} • ${latest.unitsNeeded} UNITS</div>
-                            </div>
-                        </div>
-                        
-                        <div style="margin-bottom: 24px; padding: 16px; background: rgba(0,0,0,0.4); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem;">
-                                <span style="color: var(--text-secondary);">Location</span>
-                                <span style="font-weight: 600; color: #e2e8f0;">${latest.hospitalName || 'General Hospital'}</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; font-size: 0.9rem;">
-                                <span style="color: var(--text-secondary);">Urgency</span>
-                                <span style="color: #FF4444; font-weight: 800; text-shadow: 0 0 8px rgba(255, 68, 68, 0.4);">${latest.urgency ? latest.urgency.toUpperCase() : 'CRITICAL'}</span>
-                            </div>
-                        </div>
-
-                        <button onclick="respondToEmergency('${latest._id}')" class="btn btn-primary" style="width: 100%; height: 56px; font-size: 1.1rem; font-weight: 800; letter-spacing: 0.15em; text-transform: uppercase; background: linear-gradient(135deg, #9f1239 0%, #e11d48 100%); box-shadow: 0 0 30px rgba(225, 29, 72, 0.6); position: relative; overflow: hidden;">
-                            <span style="position: relative; z-index: 1;">RESPOND NOW</span>
-                            <span style="background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent); background-size: 200% 100%; animation: text-shimmer 2s linear infinite; position: absolute; inset: 0;"></span>
-                        </button>
-                    </div>
-                    ${getSystemOnlineBadge()}
-                `;
-            } else {
-                // RENDER "SYSTEM SECURE" STATE (No Alerts)
-                heroStatusEl.innerHTML = `
-                    <div class="glass-card-premium" style="position: relative; width: 320px; overflow: visible !important; border: 1px solid rgba(34, 197, 94, 0.3); background: rgba(15, 23, 42, 0.8);">
-                        <div style="display: flex; flex-direction: column; align-items: center; text-align: center; padding: 24px 0;">
-                            <div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(6, 182, 212, 0.2)); display: flex; align-items: center; justify-content: center; margin-bottom: 24px; box-shadow: 0 0 40px rgba(34, 197, 94, 0.2);">
-                                <div style="font-size: 2.5rem;">🛡️</div>
-                            </div>
-                            <h3 style="margin-bottom: 8px;">System Secure</h3>
-                            <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 0;">Monitoring 50km radius for emergency requests...</p>
-                        </div>
-                    </div>
-                    ${getSystemOnlineBadge()}
-                `;
-            }
-        }
-
     } catch (e) {
-        console.log("Stats load silent error", e);
-        if (heroStatusEl) heroStatusEl.innerHTML = getSystemOnlineBadge(); // Fallback
+        console.log("Stats load silent fail", e);
     }
-
     // Also load the list if needed, but home page is mostly visual
     loadEmergencies();
 };
-
-// Helper for the System Badge (reused)
-const getSystemOnlineBadge = () => `
-    <div class="glass-card-premium" style="position: absolute; bottom: -20px; right: -20px; padding: 12px 20px; border-radius: 16px; border: 1px solid rgba(34, 197, 94, 0.2); background: #0f172a; display: flex; align-items: center; gap: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 10;">
-        <div style="position: relative; width: 10px; height: 10px;">
-            <div style="position: absolute; inset: 0; background: #22c55e; border-radius: 50%; animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite; opacity: 0.7;"></div>
-            <div style="position: absolute; inset: 0; background: #22c55e; border-radius: 50%;"></div>
-        </div>
-        <div>
-            <div style="font-weight: 700; font-size: 0.85rem; color: #4ade80; line-height: 1;">SYSTEM ONLINE</div>
-            <div style="font-size: 0.7rem; color: var(--text-tertiary);">Latency: 12ms</div>
-        </div>
-    </div>
-`;
 
 // Global Notification System (Toast)
 const showNotification = (msg, type) => {
@@ -223,7 +148,7 @@ const showNotification = (msg, type) => {
   if (!notifContainer) return;
 
   const toast = document.createElement('div');
-  toast.className = 'glass-card-premium';
+  toast.className = 'card';
 
   // Semantic styles for toast
   const isEmergency = type === 'emergency';
@@ -279,17 +204,17 @@ const loadDonorDashboard = async () => {
     const statsContainer = document.getElementById('donor-stats');
     if (statsContainer) {
       statsContainer.innerHTML = `
-          <div class="glass-card-premium" style="text-align: center; padding: 24px;">
+          <div class="card" style="text-align: center; padding: 24px;">
             <div style="font-size: 2.5rem; margin-bottom: 12px;">❤️</div>
             <div style="font-size: 2rem; font-weight: 700; color: var(--action-brand); letter-spacing: -0.03em;">${user.totalDonations || 0}</div>
             <div class="text-secondary text-sm font-medium uppercase tracking-wide">Total Donations</div>
           </div>
-          <div class="glass-card-premium" style="text-align: center; padding: 24px;">
+          <div class="card" style="text-align: center; padding: 24px;">
             <div style="font-size: 2.5rem; margin-bottom: 12px;">👥</div>
             <div style="font-size: 2rem; font-weight: 700; color: var(--info-base); letter-spacing: -0.03em;">${(user.totalDonations * 3) || 0}</div>
             <div class="text-secondary text-sm font-medium uppercase tracking-wide">Lives Impacted</div>
           </div>
-          <div class="glass-card-premium" style="text-align: center; padding: 24px;">
+          <div class="card" style="text-align: center; padding: 24px;">
             <div style="font-size: 2.5rem; margin-bottom: 12px;">🚨</div>
             <div style="font-size: 2rem; font-weight: 700; color: var(--danger-base); letter-spacing: -0.03em;" id="active-emergencies-count">0</div>
             <div class="text-secondary text-sm font-medium uppercase tracking-wide">Active Alerts</div>
@@ -401,15 +326,15 @@ const loadHospitalDashboard = async () => {
             </div>
             
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; margin-bottom: 48px;">
-                 <div class="glass-card-premium">
+                 <div class="card">
                     <div class="text-secondary text-sm font-medium uppercase tracking-wider mb-2">Network Active</div>
-                    <div style="font-size: 3rem; font-weight: 700; color: var(--danger-text); letter-spacing: -0.02em;">${activeCount}</div>
+                    <div style="font-size: 3rem; font-weight: 700; color: var(--danger-base); letter-spacing: -0.02em;">${activeCount}</div>
                   </div>
-                  <div class="glass-card-premium">
+                  <div class="card">
                      <div class="text-secondary text-sm font-medium uppercase tracking-wider mb-2">My Broadcasts</div>
                      <div style="font-size: 3rem; font-weight: 700; color: var(--primary-main); letter-spacing: -0.02em;">${myActiveCount}</div>
                   </div>
-                  <div class="glass-card-premium">
+                  <div class="card">
                      <div class="text-secondary text-sm font-medium uppercase tracking-wider mb-2">Total History</div>
                      <div style="font-size: 3rem; font-weight: 700; color: var(--text-main); letter-spacing: -0.02em;">${myRequests.count || 0}</div>
                   </div>
@@ -423,12 +348,12 @@ const loadHospitalDashboard = async () => {
             </div>
             <div id="my-broadcasts-list" style="display: grid; gap: 16px;">
                 ${myRequests.emergencies.length === 0 
-                    ? `<div class="glass-card-premium text-secondary" style="text-align: center; padding: 40px;">No broadcasts history found.</div>`
+                    ? `<div class="card text-secondary" style="text-align: center; padding: 40px;">No broadcasts history found.</div>`
                     : myRequests.emergencies.map(e => `
-                        <div class="glass-card-premium" style="display: flex; justify-content: space-between; align-items: center;">
+                        <div class="card" style="display: flex; justify-content: space-between; align-items: center; border-left: 4px solid ${e.status === 'active' ? 'var(--success-text)' : 'var(--border-subtle)'}; opacity: ${e.status === 'active' ? '1' : '0.7'};">
                             <div>
                                 <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 4px;">
-                                    <span class="badge" style="${e.status === 'active' ? 'background: rgba(34, 197, 94, 0.2); color: #4ADE80; border: 1px solid rgba(34, 197, 94, 0.3);' : 'background: rgba(148, 163, 184, 0.2); color: var(--text-muted);'}">${e.status.toUpperCase()}</span>
+                                    <span class="badge" style="${e.status === 'active' ? 'background: var(--success-bg); color: var(--success-text);' : 'background: var(--bg-surface-hover); color: var(--text-muted);'}">${e.status.toUpperCase()}</span>
                                     <h4 style="margin: 0;">${e.patientName} (${e.bloodGroup})</h4>
                                 </div>
                                 <div class="text-secondary text-sm">
@@ -449,7 +374,7 @@ const loadHospitalDashboard = async () => {
 
         <div id="view-inventory" class="hidden">
             <h2 style="margin-bottom: 24px;">Blood Inventory</h2>
-            <div class="glass-card-premium">
+            <div class="card">
                 <table style="width: 100%; border-collapse: collapse; color: var(--text-body);">
                     <thead>
                         <tr style="border-bottom: 1px solid var(--border-subtle); text-align: left;">
@@ -470,7 +395,7 @@ const loadHospitalDashboard = async () => {
         </div>
         
         <div id="view-analytics" class="hidden">
-             <div class="glass-card-premium" style="text-align: center; padding: 40px;">
+             <div class="card" style="text-align: center; padding: 40px;">
                 <h3>Analytics Module</h3>
                 <p>Detailed reports coming in v2.1</p>
              </div>
@@ -520,114 +445,23 @@ const respondToEmergency = async (emergencyId) => {
 };
 
 // --- EMERGENCY WIZARD ---
-/*******************************************************
- * WIZARD & EMERGENCY LOGIC
- *******************************************************/
+const nextStep = (step) => {
+  document.querySelectorAll('.wizard-step').forEach(s => s.classList.remove('active'));
+  const nextS = document.getElementById(`step-${step}`);
+  if (nextS) nextS.classList.add('active');
 
-// Global state for wizard inputs (since we use custom divs now)
-let wizardState = {
-    blood: 'O+',
-    urgency: 'critical'
+  // Populate summary if final step
+  if (step === 3) {
+    setText('summary-name', getValue('emg-name'));
+    setText('summary-blood', getValue('emg-blood'));
+    setText('summary-units', getValue('emg-units') + ' units');
+  }
 };
 
-// Functions to handle custom selection
-window.selectBlood = (btn, type) => {
-   // distinct types
-   wizardState.blood = type;
-   document.getElementById('emg-blood').value = type; // hidden input
-
-   // UI Update
-   document.querySelectorAll('.blood-selector').forEach(el => el.classList.remove('active'));
-   btn.classList.add('active');
-};
-
-window.selectUrgency = (div, level) => {
-    wizardState.urgency = level;
-    document.getElementById('emg-urgency').value = level; // hidden input
-
-    // UI Update
-    document.querySelectorAll('.urgency-option').forEach(el => el.classList.remove('active'));
-    div.classList.add('active');
-
-    // Display update
-    const display = document.getElementById('urgency-display');
-    if (level === 'critical') display.innerHTML = "network: <strong>Critical Priority</strong>. 150+ donors within 10km will be alerted instantly.";
-    if (level === 'urgent') display.innerHTML = "network: <strong>High Priority</strong>. Donors within 20km will be notified.";
-    if (level === 'severe') display.innerHTML = "network: <strong>Standard Priority</strong>. Donors within 50km will be notified.";
-}
-
-// Stepper Logic
-window.nextStep = (step) => {
-    // Validation before moving
-    if(step === 2) {
-        const name = document.getElementById('emg-name').value;
-        const cond = document.getElementById('emg-condition').value;
-        if(!name || !cond) {
-            showNotification('Please fill in all details', 'error');
-            return;
-        }
-        
-        // Update Step 1 Indicator
-        document.getElementById('step-ind-1').classList.remove('active');
-        document.getElementById('step-ind-1').style.opacity = '1'; // Completed state
-        document.getElementById('step-ind-2').classList.add('active');
-        document.getElementById('wizard-progress').style.width = '50%';
-    }
-
-    if(step === 3) {
-         const loc = document.getElementById('emg-location').value;
-         const phone = document.getElementById('emg-contact-phone').value;
-         if(!loc || !phone) {
-            showNotification('Please fill in location & contact', 'error');
-            return;
-         }
-
-        // Update Step 2 Indicator
-        document.getElementById('step-ind-2').classList.remove('active');
-        document.getElementById('step-ind-2').style.opacity = '1';
-        document.getElementById('step-ind-3').classList.add('active');
-        document.getElementById('wizard-progress').style.width = '100%';
-
-         const payload = {
-            patientName: document.getElementById('emg-name').value,
-            bloodGroup: wizardState.blood, // Used global state
-            unitsRequired: parseInt(document.getElementById('emg-units').value),
-            condition: document.getElementById('emg-condition').value,
-            urgency: wizardState.urgency, // Used global state
-            hospitalName: document.getElementById('emg-location').value,
-            contactNumber: document.getElementById('emg-contact-phone').value,
-            landmark: document.getElementById('emg-landmark').value,
-            contactPerson: document.getElementById('emg-contact-name').value
-        };
-
-         // Populate Summary
-         document.getElementById('summary-name').textContent = document.getElementById('emg-name').value;
-         document.getElementById('summary-blood').textContent = wizardState.blood;
-         document.getElementById('summary-units').textContent = document.getElementById('emg-units').value;
-         document.getElementById('summary-location').textContent = loc;
-         document.getElementById('summary-urgency').textContent = wizardState.urgency.toUpperCase();
-    }
-
-    // Switch Views
-    document.querySelectorAll('.wizard-step').forEach(el => el.classList.remove('active'));
-    document.getElementById(`step-${step}`).classList.add('active');
-};
-
-window.prevStep = (step) => {
-    // Reverse Progress
-    if(step === 1) {
-         document.getElementById('step-ind-2').classList.remove('active');
-         document.getElementById('step-ind-1').classList.add('active');
-         document.getElementById('wizard-progress').style.width = '0%';
-    }
-    if(step === 2) {
-         document.getElementById('step-ind-3').classList.remove('active');
-         document.getElementById('step-ind-2').classList.add('active');
-         document.getElementById('wizard-progress').style.width = '50%';
-    }
-
-    document.querySelectorAll('.wizard-step').forEach(el => el.classList.remove('active'));
-    document.getElementById(`step-${step}`).classList.add('active');
+const prevStep = (step) => {
+  document.querySelectorAll('.wizard-step').forEach(s => s.classList.remove('active'));
+  const prevS = document.getElementById(`step-${step}`);
+  if (prevS) prevS.classList.add('active');
 };
 
 const updateUrgency = () => {
@@ -724,7 +558,7 @@ const loadEmergencies = async () => {
         <h3 style="margin-bottom: 24px; font-size: 1.5rem;">Live Broadcasts</h3>
         <div style="display: grid; gap: 16px;">
             ${response.emergencies.map(e => `
-                <div class="glass-card-premium" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+                <div class="card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
                     <div style="display: flex; gap: 16px; align-items: center;">
                         <div style="background: var(--danger-base); color: white; width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 700;">${e.bloodGroup}</div>
                         <div>
@@ -762,7 +596,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Public list always loads
   loadEmergencies();
-  
-  // Load Home Stats (Particles & Numbers)
-  loadHomeStats();
 });
