@@ -11,6 +11,7 @@ const DonorDashboard = () => {
     const socket = useSocket();
     const [alerts, setAlerts] = useState([]);
     const [bloodRequests, setBloodRequests] = useState([]);
+    const [sentRequests, setSentRequests] = useState([]);
     const [activeTab, setActiveTab] = useState('overview');
     const [selectedEmergency, setSelectedEmergency] = useState(null);
     const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -76,9 +77,13 @@ const DonorDashboard = () => {
              try {
                  const { data } = await api.get('/auth/notifications');
                  if(data.success && data.notifications) {
-                     // Filter only requests
                      const reqs = data.notifications.filter(n => n.type === 'request').map(n => n.details);
                      if (reqs.length > 0) setBloodRequests(reqs);
+                 }
+                 // Also fetch outgoing requests
+                 const sentRes = await api.get('/api/auth/sent-requests');
+                 if(sentRes.data.success) {
+                     setSentRequests(sentRes.data.sent_requests);
                  }
              } catch(err) { console.warn("Poll failed", err); }
         };
@@ -114,7 +119,8 @@ const DonorDashboard = () => {
                     Menu
                 </div>
                 <div className={`sidebar-item ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>📊 Dashboard</div>
-                <div className={`sidebar-item ${activeTab === 'requests' ? 'active' : ''}`} onClick={() => setActiveTab('requests')}>🔔 Requests {bloodRequests.length > 0 && <span className="badge badge-brand" style={{marginLeft:'auto'}}>{bloodRequests.length}</span>}</div>
+                <div className={`sidebar-item ${activeTab === 'requests' ? 'active' : ''}`} onClick={() => setActiveTab('requests')}>🔔 Inbox {bloodRequests.length > 0 && <span className="badge badge-brand" style={{marginLeft:'auto'}}>{bloodRequests.length}</span>}</div>
+                <div className={`sidebar-item ${activeTab === 'sent' ? 'active' : ''}`} onClick={() => setActiveTab('sent')}>📨 Sent</div>
                 <div className={`sidebar-item ${activeTab === 'history' ? 'active' : ''}`} onClick={() => setActiveTab('history')}>📜 History</div>
                 <div className={`sidebar-item ${activeTab === 'profile' ? 'active' : ''}`} onClick={() => setActiveTab('profile')}>👤 Profile</div>
                 
@@ -339,13 +345,28 @@ const DonorDashboard = () => {
                             </div>
                         ) : (
                             <div style={{ display: 'grid', gap: '16px' }}>
-                                {bloodRequests.map((req, idx) => (
+                                {bloodRequests.map((req, idx) => {
+                                    // Helper for Address
+                                    const addr = req.requesterAddress;
+                                    const addrStr = addr && typeof addr === 'object' && addr.street
+                                        ? `${addr.street}, ${addr.city || ''} ${addr.zip || ''}`
+                                        : (req.location || "Location N/A");
+                                    
+                                    return (
                                     <div key={idx} className="glass-card-premium" style={{ borderLeft: '4px solid #FBBF24', background: 'rgba(251, 191, 36, 0.05)' }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                             <div>
-                                                <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'white' }}>{req.requester || "Someone"} needs help!</div>
+                                                <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'white' }}>
+                                                    {req.requester || "Someone"} 
+                                                    <span style={{ fontSize: '0.9rem', color: '#94A3B8', fontWeight: 400, marginLeft: '8px' }}>
+                                                        ({req.requesterGender || '?'}, {req.requesterAge || '?'}) needs help!
+                                                    </span>
+                                                </div>
                                                 <div style={{ color: '#94A3B8', marginTop: '4px' }}>
                                                     Requires <span style={{ color: '#E11D48', fontWeight: 'bold' }}>{req.bloodGroup}</span> at <strong>{req.location}</strong>
+                                                </div>
+                                                <div style={{ marginTop: '4px', fontSize: '0.95rem' }}>
+                                                    🏠 {addrStr}
                                                 </div>
                                                 {req.message && <div style={{ marginTop: '8px', fontStyle: 'italic', opacity: 0.8 }}>"{req.message}"</div>}
                                                 <div style={{ fontSize: '0.8rem', opacity: 0.5, marginTop: '8px' }}>Received via: Database Sync</div>
@@ -358,7 +379,7 @@ const DonorDashboard = () => {
                                                     className="btn btn-secondary"
                                                     style={{ textDecoration: 'none' }}
                                                 >
-                                                    📍 Location
+                                                    📍 Map
                                                 </a>
                                                 <a href={`tel:${req.phone}`} className="btn btn-primary" style={{ textDecoration: 'none' }}>
                                                     📞 Call {req.phone}
@@ -366,7 +387,55 @@ const DonorDashboard = () => {
                                             </div>
                                         </div>
                                     </div>
-                                ))}
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {activeTab === 'sent' && (
+                    <div className="glass-card-premium">
+                        <h3 style={{ marginBottom: '24px', color: '#38BDF8' }}>📨 Sent Requests</h3>
+                        {sentRequests.length === 0 ? (
+                            <div style={{ textAlign: 'center', opacity: 0.6 }}>No requests sent yet. Go find some donors!</div>
+                        ) : (
+                            <div style={{ display: 'grid', gap: '16px' }}>
+                                {sentRequests.map((req, idx) => {
+                                    // Helper for Address
+                                    const addr = req.donorAddress;
+                                    const addrStr = addr && typeof addr === 'object' && addr.street
+                                        ? `${addr.street}, ${addr.city || ''} ${addr.zip || ''}`
+                                        : (req.donorLocation || "Location N/A");
+
+                                    return (
+                                    <div key={idx} className="glass-card-premium" style={{ borderLeft: '4px solid #38BDF8', padding: '16px' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <div>
+                                                <div style={{ fontWeight: 700, fontSize: '1.1rem' }}>Requested: {req.donorName || "Unknown Donor"}</div>
+                                                <div style={{ fontSize: '0.9rem', color: '#94A3B8', marginTop: '4px' }}>
+                                                    Target: <span style={{ color: '#E11D48', fontWeight: 'bold' }}>{req.donorBloodGroup || "?"}</span>
+                                                </div>
+                                                <div style={{ marginTop: '4px', fontSize: '0.9rem' }}>
+                                                    📍 {addrStr}
+                                                </div>
+                                                <div style={{ fontSize: '0.8rem', opacity: 0.5, marginTop: '5px' }}>{new Date(req.createdAt).toLocaleString()}</div>
+                                            </div>
+                                            
+                                            <div style={{ textAlign: 'right', display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                                 <div className="badge" style={{ background: req.status === 'accepted' ? '#10B981' : '#38BDF8', color: 'white', marginRight: '10px' }}>
+                                                    {req.status === 'sent' ? '⏳ PENDING' : req.status.toUpperCase()}
+                                                </div>
+                                                {req.donorPhone && req.donorPhone !== 'N/A' && (
+                                                    <a href={`tel:${req.donorPhone}`} className="btn btn-primary" style={{ padding: '5px 10px', fontSize: '0.8rem', textDecoration: 'none' }}>
+                                                        📞 {req.donorPhone}
+                                                    </a>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    );
+                                })}
                             </div>
                         )}
                     </div>

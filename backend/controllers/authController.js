@@ -296,6 +296,10 @@ exports.sendRequest = async (req, res, next) => {
                     message: message,
                     details: {
                         requester: requester ? requester.name : "Someone",
+                        requesterId: requester ? requester._id : null,
+                        requesterAge: requester ? requester.age : null,
+                        requesterGender: requester ? requester.gender : null,
+                        requesterAddress: requester ? requester.address : {},
                         bloodGroup: details.bloodGroup,
                         location: details.location,
                         phone: details.contactPhone || "N/A"
@@ -306,6 +310,23 @@ exports.sendRequest = async (req, res, next) => {
             }
         });
         console.log(`💾 Saved notification to DB for ${donorId}`);
+
+        // SAVE SENT REQUEST TO REQUESTER HISTORY
+        const donor = await User.findById(donorId);
+        await User.findByIdAndUpdate(requesterId, {
+            $push: {
+                sent_requests: {
+                    donorId: donorId,
+                    donorName: donor ? donor.name : "Unknown Donor",
+                    donorPhone: donor ? donor.phone : "N/A",
+                    donorLocation: donor ? donor.city : "Unknown",
+                    donorAddress: donor ? donor.address : {},
+                    donorBloodGroup: donor ? donor.bloodGroup : "?",
+                    status: 'sent',
+                    createdAt: new Date()
+                }
+            }
+        });
 
         res.json({ success: true, message: "Request Sent to Donor!" });
 
@@ -322,6 +343,19 @@ exports.getNotifications = async (req, res, next) => {
         const user = await User.findById(req.userId).select('notifications');
         const sorted = user && user.notifications ? user.notifications.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt)) : [];
         res.status(200).json({ success: true, notifications: sorted });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// @route   GET /api/auth/sent-requests
+// @desc    Get requests sent by the user
+// @access  Private
+exports.getSentRequests = async (req, res, next) => {
+    try {
+        const user = await User.findById(req.userId).select('sent_requests');
+        const sorted = user && user.sent_requests ? user.sent_requests.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt)) : [];
+        res.status(200).json({ success: true, sent_requests: sorted });
     } catch (error) {
         next(error);
     }

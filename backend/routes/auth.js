@@ -21,4 +21,7 @@ router.post('/request', auth, authController.sendRequest);
 // @route   GET /api/auth/notifications
 router.get('/notifications', auth, authController.getNotifications);
 
+// @route   GET /api/auth/sent-requests
+router.get('/sent-requests', auth, authController.getSentRequests);
+
 module.exports = router;

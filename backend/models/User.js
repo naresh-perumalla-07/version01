@@ -88,6 +88,16 @@ const UserSchema = new mongoose.Schema(
         details: Object, // { requesterName, phone, location, bloodGroup }
         read: { type: Boolean, default: false },
         createdAt: { type: Date, default: Date.now }
+    }],
+    sent_requests: [{
+        donorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        donorName: String,
+        donorPhone: String,
+        donorLocation: String,
+        donorAddress: Object,
+        donorBloodGroup: String,
+        status: { type: String, enum: ['sent', 'accepted', 'rejected'], default: 'sent' },
+        createdAt: { type: Date, default: Date.now }
     }]
   },
   { timestamps: true }
