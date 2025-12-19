@@ -18,6 +18,7 @@ const HospitalDashboard = () => {
             // Include lat/lng from user profile or fixed for now
             const payload = {
                 ...emergencyData,
+                unitsNeeded: emergencyData.units, // Map to backend expected field
                 hospitalName: user.name,
                 location: {
                    type: 'Point',

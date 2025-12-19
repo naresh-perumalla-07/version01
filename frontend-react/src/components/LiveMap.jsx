@@ -19,9 +19,15 @@ const LiveMap = () => {
             center: [78.4867, 17.3850], // Default: Hyderabad
             zoom: 11,
             pitch: 45, // 3D effect
+            attributionControl: false
         });
 
         map.current.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
+
+        // Force resize after mount to handle Modal rendering issues
+        setTimeout(() => {
+            map.current.resize();
+        }, 200);
 
         // Fetch Initial Emergencies
         const fetchEmergencies = async () => {
@@ -91,7 +97,7 @@ const LiveMap = () => {
     }, [emergencies]);
 
     return (
-        <div style={{ position: 'relative', width: '100%', height: '500px', borderRadius: '24px', overflow: 'hidden' }}>
+        <div style={{ position: 'relative', width: '100%', height: '100%', borderRadius: 'inherit', overflow: 'hidden' }}>
             <div ref={mapContainer} style={{ width: '100%', height: '100%' }} />
             <div style={{
                 position: 'absolute',

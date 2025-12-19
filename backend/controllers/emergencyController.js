@@ -43,6 +43,11 @@ exports.createEmergency = async (req, res, next) => {
       });
 
       await emergency.save();
+      
+      try {
+        const io = getIo();
+        io.emit('emergency_alert', emergency);
+      } catch (e) { console.log('Socket emit error', e); }
 
       return res.status(201).json({
         success: true, message: 'Emergency created successfully',
@@ -60,6 +65,11 @@ exports.createEmergency = async (req, res, next) => {
 
       mockEmergencies.unshift(newEmergency); // Add to beginning
 
+      try {
+        const io = getIo();
+        io.emit('emergency_alert', newEmergency);
+      } catch (e) { console.log('Socket emit error', e); }
+
       return res.status(201).json({
         success: true, message: 'Emergency created successfully (Demo Mode)',
         emergency: { id: newEmergency._id, patientName: newEmergency.patientName, bloodGroup: newEmergency.bloodGroup },
@@ -71,16 +81,27 @@ exports.createEmergency = async (req, res, next) => {
 };
 
 // @route   GET /api/emergencies
-// @desc    Get all active emergencies
+// @desc    Get all active emergencies (Filter expired & already responded)
 // @access  Public
 exports.getEmergencies = async (req, res, next) => {
   try {
     const { bloodGroup, latitude, longitude, status, createdBy } = req.query;
+    const userId = req.userId; // Assuming middleware sets this
 
     if (isDbConnected()) {
       let filter = { status: status || 'active' };
+      
+      // 1. Check Expiration
+      filter.expiresAt = { $gt: new Date() };
+
+      // 2. Filter specific fields
       if (bloodGroup) filter.bloodGroup = bloodGroup;
-      if (createdBy === 'me') filter.createdBy = req.userId;
+      if (createdBy === 'me') filter.createdBy = userId;
+      
+      // 3. Exclude emergencies joined by this user (if not viewing own)
+      if (createdBy !== 'me' && userId) {
+         filter['respondents.donorId'] = { $ne: userId };
+      }
 
       const emergencies = await Emergency.find(filter)
         .populate('createdBy', 'name city phone')
@@ -98,7 +119,14 @@ exports.getEmergencies = async (req, res, next) => {
       return res.status(200).json({ success: true, count: result.length, emergencies: result });
     } else {
       // MOCK FALLBACK
-      let result = mockEmergencies.filter(e => e.status === (status || 'active'));
+      const now = new Date();
+      let result = mockEmergencies.filter(e => {
+          const isActive = e.status === (status || 'active');
+          const isNotExpired = new Date(e.expiresAt) > now;
+          const hasNotResponded = userId ? !e.respondents.some(r => r.donorId === userId) : true;
+          return isActive && isNotExpired && hasNotResponded;
+      });
+
       if (bloodGroup) result = result.filter(e => e.bloodGroup === bloodGroup);
 
       if (latitude && longitude) {
