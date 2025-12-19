@@ -31,10 +31,10 @@ const UserSchema = new mongoose.Schema(
     },
     // --- Phase 2: Enhanced Profile ---
     age: { type: Number },
-    gender: {
-        type: String,
-        enum: ['male', 'female', 'other']
-    },
+    gender: { type: String },
+    height: { type: Number }, // in cm
+    weight: { type: Number }, // in kg
+    bloodGroup: { type: String, enum: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] },
     address: {
         street: String,
         state: String,

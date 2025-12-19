@@ -155,11 +155,22 @@ const Register = () => {
                     </div>
 
                     <div className="form-group">
-                        <label className="label">Health Issues / Notes (Optional)</label>
-                        <textarea name="healthIssues" className="input" rows="2" value={formData.healthIssues} onChange={handleChange} placeholder="Any medical conditions we should know about?" />
+                        <label className="label">Health Issues (Optional)</label>
+                        <input name="healthIssues" className="input" placeholder="Any chronic conditions..." value={formData.healthIssues} onChange={handleChange} />
                     </div>
 
-                    <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '8px' }}>Create Account</button>
+                    <div className="grid-features" style={{ gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '16px' }}>
+                        <div className="form-group">
+                            <label className="label">Height (cm)</label>
+                            <input type="number" name="height" className="input" placeholder="175" value={formData.height} onChange={handleChange} />
+                        </div>
+                         <div className="form-group">
+                            <label className="label">Weight (kg)</label>
+                            <input type="number" name="weight" className="input" placeholder="70" value={formData.weight} onChange={handleChange} />
+                        </div>
+                    </div>
+
+                    <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '24px' }}>Create Account</button>
                     
                     <div style={{ marginTop: '16px', textAlign: 'center', fontSize: '0.9rem', color: 'var(--text-body)' }}>
                         Already have an account? <Link to="/login" style={{ color: 'var(--primary-main)', textDecoration: 'none' }}>Login</Link>

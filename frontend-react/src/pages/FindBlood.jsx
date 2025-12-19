@@ -102,7 +102,13 @@ const FindBlood = () => {
                                 </div>
                                 <div style={{ textAlign: 'right' }}>
                                     <div style={{ fontWeight: 'bold' }}>{res.distance}</div>
-                                    <button className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '6px 12px' }}>Request</button>
+                                    <button 
+                                        className="btn btn-secondary" 
+                                        style={{ fontSize: '0.8rem', padding: '6px 12px' }}
+                                        onClick={() => window.dispatchEvent(new CustomEvent('openChat', { detail: { id: `mock_${idx}`, name: res.name } }))}
+                                    >
+                                        Request
+                                    </button>
                                 </div>
                             </div>
                         ))}

@@ -1,5 +1,6 @@
 const Emergency = require('../models/Emergency');
 const User = require('../models/User');
+const { getIo } = require('../socket');
 
 // IN-MEMORY MOCK DATABASE (Fallback)
 const mockEmergencies = [];
@@ -146,6 +147,11 @@ exports.respondToEmergency = async (req, res, next) => {
       }
 
       emergency.respondents.push({ donorId: req.userId, status: 'responded' });
+      
+      try {
+        const io = getIo();
+        io.emit('emergency_updated', { type: 'response', emergencyId, respondents: emergency.respondents.length });
+      } catch (e) { console.log('Socket emit error', e); }
 
       return res.status(200).json({
         success: true, message: 'Response recorded successfully (Demo Mode)',
@@ -195,6 +201,12 @@ exports.updateEmergencyStatus = async (req, res, next) => {
       }
 
       emergency.status = status;
+      
+      try {
+        const io = getIo();
+        io.emit('emergency_updated', { type: 'status_change', emergencyId: id, status });
+      } catch (e) { console.log('Socket emit error', e); }
+
       return res.status(200).json({
         success: true,
         message: `Emergency marked as ${status} (Demo Mode)`,

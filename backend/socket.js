@@ -18,6 +18,16 @@ const init = (server) => {
             console.log(`User ${socket.id} joined room ${room}`);
         });
 
+        socket.on('join_chat', (roomId) => {
+            socket.join(roomId);
+            console.log(`User ${socket.id} joined chat ${roomId}`);
+        });
+
+        socket.on('send_message', (data) => {
+            // Broadcast to the specific room
+            io.to(data.roomId).emit('receive_message', data);
+        });
+
         socket.on('disconnect', () => {
             console.log('Client disconnected:', socket.id);
         });

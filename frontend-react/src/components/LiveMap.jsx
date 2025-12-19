@@ -62,14 +62,29 @@ const LiveMap = () => {
                 pulse.style.animation = 'ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite';
                 el.appendChild(pulse);
 
+                const popupContent = document.createElement('div');
+                popupContent.innerHTML = `
+                    <div style="padding: 10px; color: #1e293b;">
+                        <h3 style="margin: 0 0 5px 0; color: #E11D48;">🚨 ${emergency.hospitalName}</h3>
+                        <p style="margin: 0 0 10px 0;">${emergency.bloodGroup} Blood Needed</p>
+                        <div style="display: flex; gap: 8px;">
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=${emergency.location.coordinates[0]},${emergency.location.coordinates[1]}" target="_blank" rel="noopener noreferrer"
+                               style="display: inline-block; padding: 6px 12px; background: #3B82F6; color: white; text-decoration: none; border-radius: 6px; font-size: 0.8rem; font-weight: bold;">
+                               📍 Navigate
+                            </a>
+                            <button onclick="window.dispatchEvent(new CustomEvent('openChat', { detail: { id: '${emergency._id}', name: '${emergency.hospitalName}' } }))"
+                               style="padding: 6px 12px; background: #E11D48; color: white; border: none; border-radius: 6px; font-size: 0.8rem; font-weight: bold; cursor: pointer;">
+                               💬 Chat
+                            </button>
+                        </div>
+                    </div>
+                `;
+
                 new mapboxgl.Marker(el)
                     .setLngLat([emergency.location.coordinates[1], emergency.location.coordinates[0]]) // GeoJSON is Lng,Lat. Our backend might differ.
                     // Assuming Backend supports Lng/Lat standard.
                     // If backend is strictly Lat/Lng, we swap.
-                    .setPopup(new mapboxgl.Popup({ offset: 25 }).setHTML(
-                        `<div style="color:black; font-weight:bold;">${emergency.bloodGroup} Blood Needed</div>
-                         <div style="color:#333;">${emergency.hospitalName}</div>`
-                    ))
+                    .setPopup(new mapboxgl.Popup({ offset: 25 }).setDOMContent(popupContent))
                     .addTo(map.current);
             }
         });

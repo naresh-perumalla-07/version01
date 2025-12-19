@@ -3,27 +3,40 @@ import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 import api from '../api';
 
+import EmergencyDetailsModal from '../components/EmergencyDetailsModal';
+
 const DonorDashboard = () => {
     const { user, logout } = useAuth();
     const socket = useSocket();
     const [alerts, setAlerts] = useState([]);
     const [activeTab, setActiveTab] = useState('overview');
+    const [selectedEmergency, setSelectedEmergency] = useState(null);
 
     useEffect(() => {
         if (!socket) return;
         
+        // Listen for new alerts
         socket.on('emergency_alert', (data) => {
             console.log("🚨 NEW ALERT:", data);
-            // Add to top of list, ensure unique
             setAlerts(prev => [data, ...prev]);
-            
-            // Native Notification (if supported/granted)
             if(Notification.permission === "granted") {
                 new Notification("Blood Emergency!", { body: `${data.hospitalName} needs ${data.bloodGroup} blood.` });
             }
         });
 
-        return () => socket.off('emergency_alert');
+        // Listen for updates (Fulfillment, Responses)
+        socket.on('emergency_updated', (data) => {
+            console.log("🔄 UPDATE:", data);
+            if (data.type === 'status_change' && data.status === 'fulfilled') {
+                // Remove the fulfilled emergency
+                setAlerts(prev => prev.filter(e => e._id !== data.emergencyId));
+            }
+        });
+
+        return () => {
+            socket.off('emergency_alert');
+            socket.off('emergency_updated');
+        };
     }, [socket]);
 
     // Initial Load of Active Emergencies
@@ -84,7 +97,20 @@ const DonorDashboard = () => {
                                             <h4 style={{ fontSize: '1.2rem', marginBottom: '4px' }}>{alert.hospitalName || "City Hospital"}</h4>
                                             <p style={{ fontSize: '0.95rem' }}>Needs <strong>{alert.bloodGroup}</strong> Blood immediately.</p>
                                         </div>
-                                        <button className="btn btn-primary anim-pulse">Respond Now</button>
+                                        <div style={{ display: 'flex', gap: '10px' }}>
+                                            <button 
+                                                className="btn btn-secondary"
+                                                onClick={() => setSelectedEmergency(alert)}
+                                            >
+                                                View Details
+                                            </button>
+                                            <button 
+                                                className="btn btn-primary anim-pulse"
+                                                onClick={() => window.dispatchEvent(new CustomEvent('openChat', { detail: { id: alert._id || 'admin', name: alert.hospitalName } }))}
+                                            >
+                                                Respond Now
+                                            </button>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -92,16 +118,20 @@ const DonorDashboard = () => {
                     </>
                 )}
                 
-                {/* Other tabs placeholders */}
-                {activeTab === 'history' && <div className="card"><p>Donation History coming soon...</p></div>}
-                
                 {activeTab === 'profile' && (
                     <div className="card">
                         <h3>Profile Settings</h3>
                         <p><strong>Age:</strong> {user?.age || 'N/A'}</p>
                         <p><strong>Address:</strong> {user?.city}, {user?.address?.street}</p>
+                        <p><strong>Height:</strong> {user?.height} cm</p>
+                        <p><strong>Weight:</strong> {user?.weight} kg</p>
                     </div>
                 )}
+                
+                <EmergencyDetailsModal 
+                    emergency={selectedEmergency} 
+                    onClose={() => setSelectedEmergency(null)} 
+                />
 
             </main>
         </div>
