@@ -201,3 +201,110 @@ exports.updateProfile = async (req, res, next) => {
     next(error);
   }
 };
+
+const { getIo } = require('../socket'); // Import socket helper
+
+// ... inside existing exports
+
+// @route   GET /api/auth/donors
+// @desc    Find donors nearby
+// @access  Public
+exports.findDonors = async (req, res, next) => {
+  try {
+    const { bloodGroup, latitude, longitude, radius } = req.query;
+
+    if (isDbConnected()) {
+      console.log("🔍 Search Params:", req.query);
+
+      let query = { role: 'donor' };
+      if (bloodGroup) query.bloodGroup = bloodGroup;
+      
+      // Text Search for City (Only if GPS is missing)
+      // If GPS is present, we trust distance calculation instead of strict city string match
+      if (req.query.location && (!latitude || !longitude)) {
+          query.city = { $regex: req.query.location, $options: 'i' };
+      }
+
+      const donors = await User.find(query).select('name role bloodGroup latitude longitude city phone active');
+
+      // Filter by distance if lat/lng provided
+      // If user typed a city, we trust the city filter primarily. But we still calc distance if we can.
+      let results = donors.map(donor => {
+          const d = donor.toObject();
+          if (latitude && longitude && donor.latitude && donor.longitude) {
+              const dist = getDistance(latitude, longitude, donor.latitude, donor.longitude);
+              d.distance = dist.toFixed(1) + ' km';
+              d.rawDistance = dist;
+          } else {
+              d.distance = 'Unknown';
+              d.rawDistance = 9999;
+          }
+          return d;
+      });
+
+      if (latitude && longitude) {
+           results = results.sort((a, b) => a.rawDistance - b.rawDistance);
+           // Only filter by radius if no specific city was requested. 
+           // If I asked for "Tanuku", show me Tanuku even if it's 200km away.
+           if (radius && !req.query.location) {
+               results = results.filter(r => r.rawDistance <= Number(radius));
+           }
+      }
+
+      console.log(`✅ Found ${results.length} donors.`);
+      return res.status(200).json({ success: true, count: results.length, donors: results });
+    } else {
+       // Mock Logic...
+       return res.status(200).json({ success: true, donors: [] });
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @route   POST /api/auth/request
+// @desc    Send blood request notification to donor
+// @access  Private
+exports.sendRequest = async (req, res, next) => {
+    try {
+        const { donorId, message, details } = req.body;
+        const requesterId = req.userId; // Middleware provides this
+
+        const requester = await User.findById(requesterId);
+        
+        // Notify via Socket
+        try {
+            const io = getIo();
+            io.to(donorId).emit('blood_request', {
+                requester: requester ? requester.name : "Someone",
+                bloodGroup: details.bloodGroup,
+                message: message || "Urgent Blood Needed!",
+                location: details.location,
+                phone: requester ? requester.phone : "Hidden"
+            });
+            console.log(`🔔 Notification sent to ${donorId}`);
+        } catch (sErr) {
+            console.error("Socket Error:", sErr.message);
+        }
+
+        res.json({ success: true, message: "Request Sent to Donor!" });
+
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Haversine Formula for distance (in km)
+function getDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371; // Radius of the earth in km
+  const dLat = deg2rad(lat2 - lat1);
+  const dLon = deg2rad(lon2 - lon1);
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat1)) * Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c; 
+}
+
+function deg2rad(deg) {
+  return deg * (Math.PI/180);
+}

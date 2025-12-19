@@ -14,18 +14,36 @@ const FindBlood = () => {
     const handleSearch = async () => {
         setLoading(true);
         try {
-            // Mock API call or real one if endpoint exists for searching donors
-            // For now, we simulate finding results
-            setTimeout(() => {
-                setResults([
-                    { name: 'City Hospital', quantity: '5 Units', distance: '2.4 km' },
-                    { name: 'Red Cross Center', quantity: '12 Units', distance: '5.1 km' },
-                ]);
-                setLoading(false);
-                setStep(3);
-            }, 1500);
-        } catch (e) {
+            // Get user location for sorting
+            let lat, lng;
+            if (navigator.geolocation) {
+                try {
+                    const pos = await new Promise((resolve, reject) => {
+                        navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
+                    });
+                    lat = pos.coords.latitude;
+                    lng = pos.coords.longitude;
+                } catch (err) { console.warn("Location denied, showing all."); }
+            }
+
+            const { data } = await api.get('/auth/donors', {
+                params: {
+                    bloodGroup: formData.bloodGroup,
+                    location: formData.location, // Text search fallback (not implemented in backend yet but good to pass)
+                    latitude: lat,
+                    longitude: lng,
+                    radius: 50 // Default 50km
+                }
+            });
+            
+            setResults(data.donors);
             setLoading(false);
+            setStep(3);
+        } catch (e) {
+            console.error("Search Error Full:", e);
+            const msg = e.response?.data?.message || e.message || "Unknown Search Error";
+            setLoading(false);
+            alert("Search failed: " + msg);
         }
     };
 
@@ -101,18 +119,32 @@ const FindBlood = () => {
                 {step === 3 && results && (
                     <div className="fade-in">
                         <h3 style={{ marginBottom: '20px', color: '#34D399' }}>{results.length} Matches Found</h3>
+                        {results.length === 0 && <p>No specific matches found nearby. Try increasing range or choosing 'Any'.</p>}
+                        
                         {results.map((res, idx) => (
                             <div key={idx} className="card" style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <div>
                                     <h4 style={{ margin: 0 }}>{res.name}</h4>
-                                    <span className="badge badge-brand">{res.quantity}</span>
+                                    <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>{res.city} • <span style={{ color: '#F87171' }}>{res.bloodGroup}</span></div>
                                 </div>
                                 <div style={{ textAlign: 'right' }}>
                                     <div style={{ fontWeight: 'bold' }}>{res.distance}</div>
                                     <button 
                                         className="btn btn-secondary" 
-                                        style={{ fontSize: '0.8rem', padding: '6px 12px' }}
-                                        onClick={() => window.dispatchEvent(new CustomEvent('openChat', { detail: { id: `mock_${idx}`, name: res.name } }))}
+                                        style={{ fontSize: '0.8rem', padding: '6px 12px', marginTop: '4px' }}
+                                        onClick={async () => {
+                                            if(!confirm(`Send urgent request to ${res.name}?`)) return;
+                                            try {
+                                               await api.post('/auth/request', { 
+                                                   donorId: res._id, 
+                                                   message: `Urgent help needed for ${formData.bloodGroup} in ${formData.location}`,
+                                                   details: formData 
+                                               });
+                                               alert(`Request sent to ${res.name}! 📨`);
+                                            } catch(err) {
+                                               alert("Failed to send request.");
+                                            }
+                                        }}
                                     >
                                         Request
                                     </button>

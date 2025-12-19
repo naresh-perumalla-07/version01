@@ -12,7 +12,10 @@ router.post('/login', authController.login);
 // @route   GET /api/auth/me
 router.get('/me', auth, authController.getCurrentUser);
 
-// @route   PUT /api/auth/profile
-router.put('/profile', auth, authController.updateProfile);
+// @route   GET /api/auth/donors
+router.get('/donors', authController.findDonors);
+
+// @route   POST /api/auth/request
+router.post('/request', auth, authController.sendRequest);
 
 module.exports = router;

@@ -18,37 +18,61 @@ const GlobalNotifications = ({ currentChatId }) => {
                 if(Notification.permission === "granted") {
                     new Notification(`New Message from ${data.senderName}`, { body: data.text });
                 }
-                
-                // Show In-App Toast
-                const toast = document.createElement('div');
-                toast.className = 'glass-card-premium fade-in-up';
-                toast.style.position = 'fixed';
-                toast.style.bottom = '20px';
-                toast.style.left = '50%';
-                toast.style.transform = 'translateX(-50%)';
-                toast.style.zIndex = '3000';
-                toast.style.padding = '12px 24px';
-                toast.style.display = 'flex';
-                toast.style.alignItems = 'center';
-                toast.style.gap = '12px';
-                toast.style.border = '1px solid #E11D48';
-                
-                toast.innerHTML = `
-                    <div style="width: 32px; height: 32px; background: #E11D48; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">💬</div>
-                    <div>
-                        <div style="font-weight: bold;">${data.senderName}</div>
-                        <div style="font-size: 0.9rem; color: #ccc;">${data.text.substring(0, 30)}${data.text.length > 30 ? '...' : ''}</div>
-                    </div>
-                `;
-                
-                document.body.appendChild(toast);
-                setTimeout(() => toast.remove(), 4000);
+                showToast(data.senderName, data.text, 'MESSAGE');
             }
         };
 
+        const handleRequest = (data) => {
+             // Urgent Blood Request Notification
+             if(Notification.permission === "granted") {
+                 new Notification(`URGENT: ${data.bloodGroup} Needed!`, { body: data.message });
+             }
+             showToast(data.requester, `${data.message} (${data.location})`, 'REQUEST', data.bloodGroup);
+        };
+
         socket.on('receive_message', handleMessage);
-        return () => socket.off('receive_message', handleMessage);
+        socket.on('blood_request', handleRequest);
+
+        return () => {
+            socket.off('receive_message', handleMessage);
+            socket.off('blood_request', handleRequest);
+        };
     }, [socket, user, currentChatId]);
+
+    const showToast = (title, message, type, badge) => {
+        const toast = document.createElement('div');
+        toast.className = 'glass-card-premium fade-in-up';
+        toast.style.position = 'fixed';
+        toast.style.bottom = '20px';
+        toast.style.left = '50%';
+        toast.style.transform = 'translateX(-50%)';
+        toast.style.zIndex = '3000';
+        toast.style.padding = '12px 24px';
+        toast.style.display = 'flex';
+        toast.style.alignItems = 'center';
+        toast.style.gap = '16px';
+        toast.style.border = type === 'REQUEST' ? '2px solid #E11D48' : '1px solid #34D399';
+        toast.style.background = type === 'REQUEST' ? 'rgba(225, 29, 72, 0.95)' : 'rgba(16, 185, 129, 0.9)';
+        toast.style.color = '#fff';
+        toast.style.boxShadow = '0 10px 30px rgba(0,0,0,0.5)';
+        toast.style.borderRadius = '12px';
+        
+        const icon = type === 'REQUEST' ? '🚨' : '💬';
+        
+        toast.innerHTML = `
+            <div style="font-size: 1.5rem;">${icon}</div>
+            <div>
+                <div style="font-weight: bold; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
+                    ${title}
+                    ${badge ? `<span style="background: #fff; color: #E11D48; font-size: 0.75rem; padding: 2px 6px; border-radius: 4px;">${badge}</span>` : ''}
+                </div>
+                <div style="font-size: 0.9rem; opacity: 0.9;">${message}</div>
+            </div>
+        `;
+        
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 6000);
+    };
 
     return null; // Logic only component
 };
