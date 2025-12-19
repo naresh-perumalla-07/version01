@@ -1045,8 +1045,371 @@ const loadEmergencies = async () => {
 const getValue = (id) => document.getElementById(id) ? document.getElementById(id).value : '';
 const setText = (id, txt) => { if (document.getElementById(id)) document.getElementById(id).textContent = txt; };
 
+
+// --- MAP FUNCTIONS ---
+let mapInstance = null;
+
+const initMap = (containerId, emergencies) => {
+    const container = document.getElementById(containerId);
+    if (!container || !window.L) return;
+
+    // Reset if exists
+    if (mapInstance) {
+        mapInstance.remove();
+        mapInstance = null;
+    }
+
+    // Default Center (Approx India Center or Custom)
+    // For demo, we center on the first emergency or a default city (Hyderabad/Bangalore)
+    const defaultCenter = [17.3850, 78.4867]; // Hyderabad
+    
+    mapInstance = L.map(containerId, {
+        zoomControl: false,
+        attributionControl: false
+    }).setView(defaultCenter, 12);
+
+    // Dark/Night Mode Tiles
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy;OpenStreetMap, &copy;CartoDB',
+        subdomains: 'abcd',
+        maxZoom: 19
+    }).addTo(mapInstance);
+
+    // Add Markers
+    if (emergencies && emergencies.length > 0) {
+        const bounds = [];
+        emergencies.forEach(e => {
+            // Mock Geocoding: Add random offset to default center if no real coords
+            // In real app, e.location would have lat/lng
+            const offsetLat = (Math.random() - 0.5) * 0.1;
+            const offsetLng = (Math.random() - 0.5) * 0.1;
+            const lat = defaultCenter[0] + offsetLat;
+            const lng = defaultCenter[1] + offsetLng;
+
+            bounds.push([lat, lng]);
+
+            // Custom Pulse Icon
+            const pulseIcon = L.divIcon({
+                className: 'map-pulse-icon',
+                html: `<div style="width: 20px; height: 20px; background: rgba(239, 68, 68, 0.8); border-radius: 50%; border: 2px solid white; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); animation: pulse-red 2s infinite;"></div>`,
+                iconSize: [20, 20],
+                iconAnchor: [10, 10]
+            });
+
+            const marker = L.marker([lat, lng], { icon: pulseIcon }).addTo(mapInstance);
+            
+            // Popup
+            marker.bindPopup(`
+                <div style="font-family: inherit; min-width: 200px; color: #1e293b;">
+                    <div style="font-weight: 700; color: #EF4444; margin-bottom: 4px;">SOS: ${e.bloodGroup}</div>
+                    <div style="font-size: 0.9rem; margin-bottom: 4px;">${e.hospitalName}</div>
+                    <div style="font-size: 0.8rem; color: #64748B;">${e.unitsNeeded} Units Needed</div>
+                    <button onclick="respondToEmergency('${e._id}')" class="btn btn-primary" style="margin-top: 8px; width: 100%; height: 32px; font-size: 0.8rem;">Respond</button>
+                </div>
+            `);
+        });
+        
+        // Fit bounds if we have points
+        if (bounds.length > 0) {
+            mapInstance.fitBounds(bounds, { padding: [50, 50] });
+        }
+    }
+};
+
+// Add global pulse animation for map if not exists
+const style = document.createElement('style');
+style.innerHTML = `
+@keyframes pulse-red {
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+    }
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+    }
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+    }
+}
+.map-pulse-icon {
+    background: transparent;
+    border: none;
+}
+.leaflet-popup-content-wrapper {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(4px);
+    border-radius: 12px;
+    padding: 0;
+}
+.leaflet-popup-tip {
+    background: rgba(255, 255, 255, 0.95);
+}
+`;
+document.head.appendChild(style);
+
+
+// --- CHATBOT WIDGET ---
+const initChatbot = () => {
+    // 1. Inject Styles
+    if (document.getElementById('chatbot-style')) return; 
+    
+    const style = document.createElement('style');
+    style.id = 'chatbot-style';
+    style.innerHTML = `
+        #bb-chatbot-fab {
+            position: fixed;
+            bottom: 32px;
+            right: 32px;
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
+            border-radius: 50%;
+            box-shadow: 0 10px 25px rgba(225, 29, 72, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 9999;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            animation: float-y 3s ease-in-out infinite;
+        }
+        #bb-chatbot-fab:hover {
+            transform: scale(1.1) translateY(-4px);
+        }
+        #bb-chatbot-window {
+            position: fixed;
+            bottom: 110px;
+            right: 32px;
+            width: 350px;
+            height: 500px;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 9999;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(20px) scale(0.95);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        #bb-chatbot-window.visible {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0) scale(1);
+        }
+        .chat-header {
+            padding: 20px;
+            background: linear-gradient(to right, rgba(225, 29, 72, 0.1), transparent);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .chat-msg {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            animation: slide-up 0.3s ease-out;
+        }
+        .chat-msg.bot {
+            background: rgba(255, 255, 255, 0.1);
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+        .chat-msg.user {
+            background: #e11d48;
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+        .chat-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .chat-option-btn {
+            background: transparent;
+            border: 1px solid rgba(225, 29, 72, 0.5);
+            color: #e11d48;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .chat-option-btn:hover {
+            background: rgba(225, 29, 72, 0.1);
+        }
+        @keyframes float-y { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+        @keyframes slide-up { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    `;
+    document.head.appendChild(style);
+
+    // 2. Inject DOM
+    const fab = document.createElement('div');
+    fab.id = 'bb-chatbot-fab';
+    fab.innerHTML = `<span style="font-size: 2rem;">🤖</span>`; 
+    
+    const win = document.createElement('div');
+    win.id = 'bb-chatbot-window';
+    win.innerHTML = `
+        <div class="chat-header">
+            <div style="width: 10px; height: 10px; background: #34D399; border-radius: 50%; box-shadow: 0 0 5px #34D399;"></div>
+            <div>
+                <div style="font-weight: 700; font-size: 0.95rem;">Bridge Assistant</div>
+                <div style="font-size: 0.75rem; color: var(--text-secondary);">Always online</div>
+            </div>
+            <button onclick="toggleChat()" style="margin-left: auto; background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 1.2rem;">&times;</button>
+        </div>
+        <div class="chat-messages" id="chat-messages">
+            <!-- Dynamic Content -->
+        </div>
+        <div style="padding: 12px; border-top: 1px solid rgba(255,255,255,0.05); font-size: 0.7rem; color: var(--text-secondary); text-align: center;">
+            AI-powered triage support
+        </div>
+    `;
+
+    document.body.appendChild(fab);
+    document.body.appendChild(win);
+
+    // 3. Interaction Logic
+    fab.onclick = toggleChat;
+
+    // Initial Greeting
+    setTimeout(() => {
+        addBotMessage("Hi! I'm your Blood Bridge assistant. How can I help you today?", [
+            { text: "I need blood ASAP", action: "need_blood" },
+            { text: "I want to donate", action: "donate" },
+            { text: "Am I eligible?", action: "check_eligibility" }
+        ]);
+    }, 1000);
+}
+
+window.toggleChat = () => {
+    const win = document.getElementById('bb-chatbot-window');
+    win.classList.toggle('visible');
+}
+
+const addBotMessage = (text, options = []) => {
+    const container = document.getElementById('chat-messages');
+    if(!container) return;
+    
+    const msgDiv = document.createElement('div');
+    msgDiv.className = 'chat-msg bot';
+    msgDiv.innerHTML = text;
+    container.appendChild(msgDiv);
+
+    if (options.length > 0) {
+        const optDiv = document.createElement('div');
+        optDiv.className = 'chat-options';
+        options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.className = 'chat-option-btn';
+            btn.textContent = opt.text;
+            btn.onclick = () => handleChatAction(opt.action, opt.text);
+            optDiv.appendChild(btn);
+        });
+        container.appendChild(optDiv);
+    }
+    
+    container.scrollTo(0, container.scrollHeight);
+}
+
+const addUserMessage = (text) => {
+    const container = document.getElementById('chat-messages');
+    if(!container) return;
+    
+    const msgDiv = document.createElement('div');
+    msgDiv.className = 'chat-msg user';
+    msgDiv.textContent = text;
+    container.appendChild(msgDiv);
+    container.scrollTo(0, container.scrollHeight);
+}
+
+const handleChatAction = (action, text) => {
+    addUserMessage(text);
+    
+    // Simulate Typing
+    setTimeout(() => {
+        switch(action) {
+            case 'need_blood':
+                addBotMessage("🚨 I understand this is urgent. To request blood, you need to broadcast an SOS signal.", [
+                    { text: "Start Broadcast", action: "goto_broadcast" },
+                    { text: "Back to menu", action: "reset" }
+                ]);
+                break;
+            case 'goto_broadcast':
+                showPage('emergency');
+                toggleChat();
+                break;
+            case 'donate':
+                addBotMessage("Heroes are always welcome! You can register as a donor to get alerted for nearby emergencies.", [
+                    { text: "Register Now", action: "goto_register" },
+                    { text: "I'm already registered", action: "goto_login" }
+                ]);
+                break;
+            case 'goto_register':
+                showPage('register');
+                toggleChat();
+                break;
+             case 'goto_login':
+                showPage('login');
+                toggleChat();
+                break;
+            case 'check_eligibility':
+                addBotMessage("Let's check quickly. Are you over 18 years old?", [
+                    { text: "Yes", action: "elig_yes_age" },
+                    { text: "No", action: "elig_fail" }
+                ]);
+                break;
+            case 'elig_yes_age':
+                addBotMessage("Great. Do you weigh more than 50kg?", [
+                    { text: "Yes", action: "elig_success" },
+                    { text: "No", action: "elig_fail" }
+                ]);
+                break;
+            case 'elig_success':
+                addBotMessage("✅ You are likely eligible to save lives! Please register immediately.", [
+                    { text: "Register Now", action: "goto_register" }
+                ]);
+                break;
+            case 'elig_fail':
+                 addBotMessage("⚠️ You might not meet the medical criteria right now. Check back later or consult a doctor.", [
+                    { text: "Back to menu", action: "reset" }
+                ]);
+                break;
+            case 'reset':
+                addBotMessage("How else can I assist?", [
+                    { text: "I need blood", action: "need_blood" },
+                    { text: "Donate", action: "donate" }
+                 ]);
+                 break;
+        }
+    }, 600);
+}
+
+
 // Initializer
 document.addEventListener('DOMContentLoaded', () => {
+  initChatbot(); // Launch Chatbot
+  
   updateNavbar();
 
   // Check auth status
