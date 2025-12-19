@@ -18,4 +18,7 @@ router.get('/donors', authController.findDonors);
 // @route   POST /api/auth/request
 router.post('/request', auth, authController.sendRequest);
 
+// @route   GET /api/auth/notifications
+router.get('/notifications', auth, authController.getNotifications);
+
 module.exports = router;

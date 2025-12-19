@@ -274,21 +274,54 @@ exports.sendRequest = async (req, res, next) => {
         
         // Notify via Socket
         try {
+            console.log(`📨 Sending Request to ${donorId}`);
             const io = getIo();
             io.to(donorId).emit('blood_request', {
                 requester: requester ? requester.name : "Someone",
                 bloodGroup: details.bloodGroup,
-                message: message || "Urgent Blood Needed!",
                 location: details.location,
-                phone: requester ? requester.phone : "Hidden"
+                phone: details.contactPhone || "N/A",
+                message: message
             });
-            console.log(`🔔 Notification sent to ${donorId}`);
+            console.log(`🔔 Socket sent to ${donorId}`);
         } catch (sErr) {
             console.error("Socket Error:", sErr.message);
         }
 
+        // PERSIST TO DB (Fallback)
+        await User.findByIdAndUpdate(donorId, {
+            $push: {
+                notifications: {
+                    type: 'request',
+                    message: message,
+                    details: {
+                        requester: requester ? requester.name : "Someone",
+                        bloodGroup: details.bloodGroup,
+                        location: details.location,
+                        phone: details.contactPhone || "N/A"
+                    },
+                    read: false,
+                    createdAt: new Date()
+                }
+            }
+        });
+        console.log(`💾 Saved notification to DB for ${donorId}`);
+
         res.json({ success: true, message: "Request Sent to Donor!" });
 
+    } catch (error) {
+        next(error);
+    }
+};
+
+// @route   GET /api/auth/notifications
+// @desc    Get user notifications
+// @access  Private
+exports.getNotifications = async (req, res, next) => {
+    try {
+        const user = await User.findById(req.userId).select('notifications');
+        const sorted = user && user.notifications ? user.notifications.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt)) : [];
+        res.status(200).json({ success: true, notifications: sorted });
     } catch (error) {
         next(error);
     }

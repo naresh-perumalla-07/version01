@@ -13,6 +13,13 @@ const init = (server) => {
     io.on('connection', (socket) => {
         console.log('Client connected:', socket.id);
 
+        // Auto-Join User Room for Private Notifications
+        const userId = socket.handshake.query.userId;
+        if (userId) {
+            socket.join(userId);
+            console.log(`👤 User ${userId} joined their personal room`);
+        }
+
         socket.on('join_room', (room) => {
             socket.join(room);
             console.log(`User ${socket.id} joined room ${room}`);

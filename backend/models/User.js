@@ -82,6 +82,13 @@ const UserSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    notifications: [{
+        type: { type: String, enum: ['request', 'system'], default: 'request' },
+        message: String,
+        details: Object, // { requesterName, phone, location, bloodGroup }
+        read: { type: Boolean, default: false },
+        createdAt: { type: Date, default: Date.now }
+    }]
   },
   { timestamps: true }
 );

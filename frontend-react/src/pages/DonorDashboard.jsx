@@ -10,6 +10,7 @@ const DonorDashboard = () => {
     const { user, logout } = useAuth();
     const socket = useSocket();
     const [alerts, setAlerts] = useState([]);
+    const [bloodRequests, setBloodRequests] = useState([]);
     const [activeTab, setActiveTab] = useState('overview');
     const [selectedEmergency, setSelectedEmergency] = useState(null);
     const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -23,6 +24,15 @@ const DonorDashboard = () => {
             setAlerts(prev => [data, ...prev]);
             if(Notification.permission === "granted") {
                 new Notification("Blood Emergency!", { body: `${data.hospitalName} needs ${data.bloodGroup} blood.` });
+            }
+        });
+
+        // Listen for Direct Requests (Find Blood feature)
+        socket.on('blood_request', (data) => {
+            console.log("🔔 PERSONAL REQUEST:", data);
+            setBloodRequests(prev => [data, ...prev]);
+             if(Notification.permission === "granted") {
+                new Notification("Personal Request", { body: `${data.requester} needs your help!` });
             }
         });
 
@@ -57,7 +67,25 @@ const DonorDashboard = () => {
             socket.off('emergency_alert');
             socket.off('emergency_updated');
         };
+
     }, [socket]);
+
+    // POLL Notifications (Fallback for Socket)
+    useEffect(() => {
+        const fetchNotifications = async () => {
+             try {
+                 const { data } = await api.get('/auth/notifications');
+                 if(data.success && data.notifications) {
+                     // Filter only requests
+                     const reqs = data.notifications.filter(n => n.type === 'request').map(n => n.details);
+                     if (reqs.length > 0) setBloodRequests(reqs);
+                 }
+             } catch(err) { console.warn("Poll failed", err); }
+        };
+        fetchNotifications(); // Initial
+        const interval = setInterval(fetchNotifications, 5000); // Poll every 5s
+        return () => clearInterval(interval);
+    }, []);
 
     // Initial Load of Active Emergencies
     useEffect(() => {
@@ -86,6 +114,7 @@ const DonorDashboard = () => {
                     Menu
                 </div>
                 <div className={`sidebar-item ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>📊 Dashboard</div>
+                <div className={`sidebar-item ${activeTab === 'requests' ? 'active' : ''}`} onClick={() => setActiveTab('requests')}>🔔 Requests {bloodRequests.length > 0 && <span className="badge badge-brand" style={{marginLeft:'auto'}}>{bloodRequests.length}</span>}</div>
                 <div className={`sidebar-item ${activeTab === 'history' ? 'active' : ''}`} onClick={() => setActiveTab('history')}>📜 History</div>
                 <div className={`sidebar-item ${activeTab === 'profile' ? 'active' : ''}`} onClick={() => setActiveTab('profile')}>👤 Profile</div>
                 
@@ -108,7 +137,48 @@ const DonorDashboard = () => {
                     </div>
                 </div>
 
-                {/* Hero Stats (Only on Overview) */}
+
+             
+                {/* NEW: Direct 1-on-1 Requests */}
+                {activeTab === 'overview' && bloodRequests.length > 0 && (
+                     <div style={{ marginBottom: '40px', animation: 'fadeIn 0.5s' }}>
+                        <h3 style={{ marginBottom: '16px', color: '#FBBF24', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                             <span style={{ fontSize: '1.5rem' }}>🔔</span> 
+                             Direct Requests ({bloodRequests.length})
+                        </h3>
+                        <div style={{ display: 'grid', gap: '16px' }}>
+                            {bloodRequests.map((req, idx) => (
+                                <div key={idx} className="glass-card-premium" style={{ borderLeft: '4px solid #FBBF24', background: 'rgba(251, 191, 36, 0.05)' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <div>
+                                            <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'white' }}>{req.requester || "Someone"} needs help!</div>
+                                            <div style={{ color: '#94A3B8', marginTop: '4px' }}>
+                                                Requires <span style={{ color: '#E11D48', fontWeight: 'bold' }}>{req.bloodGroup}</span> at <strong>{req.location}</strong>
+                                            </div>
+                                            {req.message && <div style={{ marginTop: '8px', fontStyle: 'italic', opacity: 0.8 }}>"{req.message}"</div>}
+                                        </div>
+                                        <div style={{ textAlign: 'right', display: 'flex', gap: '10px' }}>
+                                            <a 
+                                                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(req.location)}`} 
+                                                target="_blank" 
+                                                rel="noreferrer"
+                                                className="btn btn-secondary"
+                                                style={{ textDecoration: 'none' }}
+                                            >
+                                                📍 Location
+                                            </a>
+                                            <a href={`tel:${req.phone}`} className="btn btn-primary" style={{ textDecoration: 'none' }}>
+                                                📞 Call {req.phone}
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                     </div>
+                )}
+
+                {/* Hero Stats */}
                 {activeTab === 'overview' && (
                     <>
                         <div className="grid-features" style={{ gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginBottom: '40px' }}>
@@ -252,6 +322,54 @@ const DonorDashboard = () => {
                             </div>
                         </div>
                     </div>
+
+                )}
+
+                {activeTab === 'requests' && (
+                    <div className="glass-card-premium">
+                        <h3 style={{ marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                             <span style={{ fontSize: '1.5rem', color: '#FBBF24' }}>🔔</span> 
+                             Incoming Blood Requests
+                        </h3>
+
+                        {bloodRequests.length === 0 ? (
+                            <div style={{ textAlign: 'center', padding: '40px', opacity: 0.6 }}>
+                                <div style={{ fontSize: '3rem' }}>📭</div>
+                                <p>No pending requests.</p>
+                            </div>
+                        ) : (
+                            <div style={{ display: 'grid', gap: '16px' }}>
+                                {bloodRequests.map((req, idx) => (
+                                    <div key={idx} className="glass-card-premium" style={{ borderLeft: '4px solid #FBBF24', background: 'rgba(251, 191, 36, 0.05)' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <div>
+                                                <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'white' }}>{req.requester || "Someone"} needs help!</div>
+                                                <div style={{ color: '#94A3B8', marginTop: '4px' }}>
+                                                    Requires <span style={{ color: '#E11D48', fontWeight: 'bold' }}>{req.bloodGroup}</span> at <strong>{req.location}</strong>
+                                                </div>
+                                                {req.message && <div style={{ marginTop: '8px', fontStyle: 'italic', opacity: 0.8 }}>"{req.message}"</div>}
+                                                <div style={{ fontSize: '0.8rem', opacity: 0.5, marginTop: '8px' }}>Received via: Database Sync</div>
+                                            </div>
+                                            <div style={{ textAlign: 'right', display: 'flex', gap: '10px' }}>
+                                                <a 
+                                                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(req.location)}`} 
+                                                    target="_blank" 
+                                                    rel="noreferrer"
+                                                    className="btn btn-secondary"
+                                                    style={{ textDecoration: 'none' }}
+                                                >
+                                                    📍 Location
+                                                </a>
+                                                <a href={`tel:${req.phone}`} className="btn btn-primary" style={{ textDecoration: 'none' }}>
+                                                    📞 Call {req.phone}
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 )}
                 
                 <EmergencyDetailsModal 
@@ -273,26 +391,13 @@ const DonorDashboard = () => {
                     border-radius: 16px;
                     transition: all 0.3s ease;
                 }
-                .hover-scale:hover {
-                    transform: translateY(-5px);
-                    background: rgba(30, 41, 59, 0.6);
-                    border-color: rgba(255,255,255,0.1);
-                    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-                }
-                .ping-dot {
-                    width: 8px; height: 8px;
-                    background: #34D399;
-                    border-radius: 50%;
-                    box-shadow: 0 0 10px #34D399;
-                    animation: pulse 2s infinite;
-                }
-                .mission-card {
-                    transition: transform 0.2s;
-                }
-                .mission-card:hover {
-                    transform: scale(1.02);
-                }
+                /* ... other styles ... */
             `}</style>
+
+            {/* DEBUG FOOTER */}
+            <div style={{ position: 'fixed', bottom: 0, left: 0, width: '100%', background: '#000', color: '#0f0', padding: '5px', fontSize: '10px', zIndex: 9999, textAlign: 'center' }}>
+                DEBUG: User ID: {user?._id} | Socket: {socket ? "Connected ✅" : "Disconnected ❌"} | Last Alert: {bloodRequests.length > 0 ? "RECEIVED" : "NONE"}
+            </div>
         </div>
     );
 };
