@@ -13,7 +13,9 @@ const Login = () => {
         setError('');
         const res = await login(formData.email, formData.password);
         if (res.success) {
-            navigate('/');
+            if (res.role === 'hospital') navigate('/dashboard/hospital');
+            else if (res.role === 'donor') navigate('/dashboard/donor');
+            else navigate('/dashboard/receiver');
         } else {
             console.error("Login Failed UI:", res.message);
             setError(res.message);

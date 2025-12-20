@@ -13,7 +13,13 @@ const EditProfileModal = ({ onClose }) => {
     
     const [formData, setFormData] = useState({
         name: user?.name || '',
+        phone: user?.phone || '',
         city: user?.city || '',
+        address: {
+            street: user?.address?.street || '',
+            state: user?.address?.state || '',
+            zip: user?.address?.zip || ''
+        },
         age: user?.age || '',
         height: user?.height || '',
         weight: user?.weight || '',
@@ -59,8 +65,28 @@ const EditProfileModal = ({ onClose }) => {
                     </div>
                     
                     <div className="form-group">
-                        <label className="label">City</label>
-                        <input className="input" value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})} />
+                        <label className="label">Phone Number</label>
+                        <input className="input" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
+                    </div>
+
+                    <div className="form-group">
+                        <label className="label">Street Address</label>
+                        <input className="input" value={formData.address.street} onChange={e => setFormData({...formData, address: {...formData.address, street: e.target.value}})} />
+                    </div>
+
+                    <div className="grid-features" style={{ gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+                         <div className="form-group">
+                            <label className="label">City</label>
+                            <input className="input" value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})} />
+                        </div>
+                        <div className="form-group">
+                            <label className="label">State</label>
+                            <input className="input" value={formData.address.state} onChange={e => setFormData({...formData, address: {...formData.address, state: e.target.value}})} />
+                        </div>
+                        <div className="form-group">
+                            <label className="label">Zip Code</label>
+                            <input className="input" value={formData.address.zip} onChange={e => setFormData({...formData, address: {...formData.address, zip: e.target.value}})} />
+                        </div>
                     </div>
 
                     <div className="grid-features" style={{ gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>

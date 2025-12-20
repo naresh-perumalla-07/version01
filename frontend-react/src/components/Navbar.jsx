@@ -37,8 +37,8 @@ const Navbar = () => {
                 {user?.role === 'hospital' && (
                     <Link to="/dashboard/hospital" className={`nav-item ${isActive('/dashboard/hospital')}`} onClick={() => setMobileMenuOpen(false)}>Institutions</Link>
                 )}
-                {user?.role === 'donor' && (
-                    <Link to="/dashboard/donor" className={`nav-item ${isActive('/dashboard/donor')}`} onClick={() => setMobileMenuOpen(false)}>Dashboard</Link>
+                {(user?.role === 'donor' || user?.role === 'person') && (
+                    <Link to={user.role === 'donor' ? "/dashboard/donor" : "/dashboard/receiver"} className={`nav-item ${isActive('/dashboard/donor') || isActive('/dashboard/receiver')}`} onClick={() => setMobileMenuOpen(false)}>Dashboard</Link>
                 )}
             </div>
 

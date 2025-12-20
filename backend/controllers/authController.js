@@ -361,6 +361,34 @@ exports.getSentRequests = async (req, res, next) => {
     }
 };
 
+// @route   POST /api/auth/respond-request
+// @desc    Accept or Reject a blood request
+// @access  Private
+exports.respondToRequest = async (req, res, next) => {
+    try {
+        const { requesterId, status } = req.body; // 'accepted' or 'rejected'
+        const donorId = req.userId;
+
+        console.log(`📝 Responding to request: Donor ${donorId} -> Requester ${requesterId} (${status})`);
+
+        // 1. Update Requester's "Sent Requests" status
+        const result = await User.updateOne(
+            { _id: requesterId, "sent_requests.donorId": donorId },
+            { 
+                $set: { 
+                    "sent_requests.$.status": status,
+                    "sent_requests.$.updatedAt": new Date()
+                } 
+            }
+        );
+
+        res.status(200).json({ success: true, message: `Request ${status}` });
+
+    } catch (error) {
+        next(error);
+    }
+};
+
 // Haversine Formula for distance (in km)
 function getDistance(lat1, lon1, lat2, lon2) {
   const R = 6371; // Radius of the earth in km

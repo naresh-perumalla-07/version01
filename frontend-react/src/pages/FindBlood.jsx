@@ -1,12 +1,18 @@
 import React, { useState } from 'react';
 import api from '../api';
 
+import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
+
 const FindBlood = () => {
+    const { user } = useAuth();
+    const navigate = useNavigate();
     const [step, setStep] = useState(1);
     const [formData, setFormData] = useState({
-        location: '',
-        bloodGroup: '',
-        urgency: 'Medium'
+        location: user?.city || '',
+        bloodGroup: user?.bloodGroup || '',
+        urgency: 'Medium',
+        contactPhone: user?.phone || ''
     });
     const [results, setResults] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -70,6 +76,10 @@ const FindBlood = () => {
 
                 {step === 1 && (
                     <div className="fade-in">
+                        <div className="form-group">
+                            <label className="label">Contact Phone</label>
+                            <input className="input" placeholder="Your Phone Number" value={formData.contactPhone} onChange={e => setFormData({...formData, contactPhone: e.target.value})} />
+                        </div>
                         <div className="form-group">
                             <label className="label">Blood Group Needed</label>
                             <select className="input" value={formData.bloodGroup} onChange={e => setFormData({...formData, bloodGroup: e.target.value})}>
@@ -149,6 +159,7 @@ const FindBlood = () => {
                                                    details: formData 
                                                });
                                                alert(`Request sent to ${res.name}! 📨`);
+                                               navigate('/dashboard/receiver'); // Auto-redirect to dashboard
                                             } catch(err) {
                                                alert("Failed to send request.");
                                             }
@@ -159,6 +170,9 @@ const FindBlood = () => {
                                 </div>
                             </div>
                         ))}
+                         <button className="btn btn-primary" style={{ marginTop: '20px', width: '100%' }} onClick={() => navigate('/dashboard/receiver')}>
+                            🔙 Back to Dashboard
+                        </button>
                     </div>
                 )}
             

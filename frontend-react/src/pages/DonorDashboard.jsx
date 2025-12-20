@@ -16,6 +16,21 @@ const DonorDashboard = () => {
     const [selectedEmergency, setSelectedEmergency] = useState(null);
     const [isEditingProfile, setIsEditingProfile] = useState(false);
 
+    const handleRequestResponse = async (requesterId, status) => {
+        if (!requesterId) return alert("Cannot respond: Requester ID missing.");
+        try {
+            const { data } = await api.post('/auth/respond-request', { requesterId, status });
+            if (data.success) {
+                alert(`Request ${status === 'accepted' ? 'Accepted' : 'Refused'}!`);
+                // Optional: Remove from list to avoid double action
+                // setBloodRequests(prev => prev.filter(req => req.requesterId !== requesterId));
+            }
+        } catch (err) {
+            console.error("Response Error:", err);
+            alert("Failed to update status.");
+        }
+    };
+
     useEffect(() => {
         if (!socket) return;
         
@@ -81,7 +96,7 @@ const DonorDashboard = () => {
                      if (reqs.length > 0) setBloodRequests(reqs);
                  }
                  // Also fetch outgoing requests
-                 const sentRes = await api.get('/api/auth/sent-requests');
+                 const sentRes = await api.get('/auth/sent-requests');
                  if(sentRes.data.success) {
                      setSentRequests(sentRes.data.sent_requests);
                  }
@@ -314,9 +329,19 @@ const DonorDashboard = () => {
                                 <label className="label">Full Name</label>
                                 <div className="input" style={{ border: 'none', background: 'rgba(255,255,255,0.05)' }}>{user?.name}</div>
                             </div>
+                            <div>
+                                <label className="label">Phone</label>
+                                <div className="input" style={{ border: 'none', background: 'rgba(255,255,255,0.05)' }}>{user?.phone || 'N/A'}</div>
+                            </div>
                              <div>
                                 <label className="label">Location</label>
                                 <div className="input" style={{ border: 'none', background: 'rgba(255,255,255,0.05)' }}>{user?.city}</div>
+                            </div>
+                             <div>
+                                <label className="label">Full Address</label>
+                                <div className="input" style={{ border: 'none', background: 'rgba(255,255,255,0.05)', fontSize: '0.9rem' }}>
+                                    {user?.address ? `${user.address.street || ''}, ${user.address.state || ''} ${user.address.zip || ''}` : 'No address set'}
+                                </div>
                             </div>
                              <div>
                                 <label className="label">Blood Group</label>
@@ -325,6 +350,12 @@ const DonorDashboard = () => {
                              <div>
                                 <label className="label">Age</label>
                                 <div className="input" style={{ border: 'none', background: 'rgba(255,255,255,0.05)' }}>{user?.age || 'N/A'}</div>
+                            </div>
+                             <div>
+                                <label className="label">Height/Weight</label>
+                                <div className="input" style={{ border: 'none', background: 'rgba(255,255,255,0.05)' }}>
+                                    {user?.height ? `${user.height}cm` : '-'} / {user?.weight ? `${user.weight}kg` : '-'}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -371,19 +402,39 @@ const DonorDashboard = () => {
                                                 {req.message && <div style={{ marginTop: '8px', fontStyle: 'italic', opacity: 0.8 }}>"{req.message}"</div>}
                                                 <div style={{ fontSize: '0.8rem', opacity: 0.5, marginTop: '8px' }}>Received via: Database Sync</div>
                                             </div>
-                                            <div style={{ textAlign: 'right', display: 'flex', gap: '10px' }}>
-                                                <a 
-                                                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(req.location)}`} 
-                                                    target="_blank" 
-                                                    rel="noreferrer"
-                                                    className="btn btn-secondary"
-                                                    style={{ textDecoration: 'none' }}
-                                                >
-                                                    📍 Map
-                                                </a>
-                                                <a href={`tel:${req.phone}`} className="btn btn-primary" style={{ textDecoration: 'none' }}>
-                                                    📞 Call {req.phone}
-                                                </a>
+                                            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-end' }}>
+                                                <div style={{ display: 'flex', gap: '8px' }}>
+                                                    <a 
+                                                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(req.location)}`} 
+                                                        target="_blank" 
+                                                        rel="noreferrer"
+                                                        className="btn btn-secondary"
+                                                        style={{ textDecoration: 'none', padding: '6px 12px', fontSize: '0.8rem' }}
+                                                    >
+                                                        📍 Map
+                                                    </a>
+                                                    <a href={`tel:${req.phone}`} className="btn btn-primary" style={{ textDecoration: 'none', padding: '6px 12px', fontSize: '0.8rem' }}>
+                                                        📞 Call
+                                                    </a>
+                                                </div>
+                                                
+                                                {/* ACTION BUTTONS */}
+                                                <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                                                    <button 
+                                                        className="btn" 
+                                                        style={{ background: '#ef4444', color: 'white', padding: '6px 16px', fontSize: '0.8rem', border: 'none', cursor: 'pointer' }}
+                                                        onClick={() => handleRequestResponse(req.requesterId, 'rejected')}
+                                                    >
+                                                        Refuse
+                                                    </button>
+                                                    <button 
+                                                        className="btn" 
+                                                        style={{ background: '#10B981', color: 'white', padding: '6px 16px', fontSize: '0.8rem', border: 'none', cursor: 'pointer' }}
+                                                        onClick={() => handleRequestResponse(req.requesterId, 'accepted')}
+                                                    >
+                                                        ✔ Accept
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>

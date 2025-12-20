@@ -48,6 +48,14 @@ function App() {
                     } 
                 />
                 <Route 
+                    path="/dashboard/receiver" 
+                    element={
+                        <ProtectedRoute allowedRoles={['person', 'donor']}> 
+                            <DonorDashboard />
+                        </ProtectedRoute>
+                    } 
+                />
+                <Route 
                     path="/dashboard/hospital" 
                     element={
                         <ProtectedRoute allowedRoles={['hospital']}>
